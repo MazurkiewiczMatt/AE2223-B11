@@ -1,11 +1,10 @@
 import rosbag
 import numpy as np
 from matplotlib import pyplot as plt
-# example change
-# Hello this is Frank
-bag = rosbag.Bag('1.bag')
 
-#/dvs/events, '/dvs/imu', '/optitrack/pose', '/radar/data'
+# ---------------------------- IMPORT BAG -------------------------------
+bag = rosbag.Bag('1.bag')
+# All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
 events = []
 imu = []
 optitrack = []
@@ -14,33 +13,49 @@ radar_msg = []
 for topic, msg, t in bag.read_messages(topics=['/radar/data']):
     radar_time.append(t)
     radar_msg.append(msg)
-# msg.dimx     msg....
-print(radar_msg[0])
 bag.close()
 
+# ---------------------------------- LOAD DATA --------------------------------
+# This is the data from a single datapoint (time interval)
+rx1_re = np.array(radar_msg[0].data_rx1_re)
+rx1_im = np.array(radar_msg[0].data_rx1_im)
+rx2_re = np.array(radar_msg[0].data_rx2_re)
+rx2_im = np.array(radar_msg[0].data_rx2_im)
 
-y1_1 = np.array(radar_msg[0].data_rx1_re)
-y1_2 = np.array(radar_msg[0].data_rx1_im)
-y2_1 = np.array(radar_msg[0].data_rx2_re)
-y2_2 = np.array(radar_msg[0].data_rx2_im)
+# The list 'chirps' is organised as follows. If the list is chirps[i][j] then i indicates the current chirp,
+# and j indicates the measurement type of that chirp (rx1_re or rx1_im etc.).
+y = [rx1_re, rx1_im, rx2_re, rx2_im]
+no_chirps = radar_msg[0].dimx
+length_chirp = radar_msg[0].dimy
+chirps = []
+for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and including no_chirps - 1.
+    temp_lst = []  # temporary list to organise the chirps list properly
+    for j in y:   # Each j is one type of measurement.
+        temp_lst.append(j[length_chirp*i:length_chirp*(i+1)])   # Add the data that correspond to the current chirp
+    chirps.append(temp_lst)
 
+
+'''
 y1 = []
 for i in range(len(y1_1)):
-    if i <= 128:
+    if i <= 128:   # first chirp
         y1.append(y1_1[i])
 x1 = np.linspace(0, 12.1, len(y1))
 
 y1_im = []
 for i in range(len(y1_2)):
-    if i <= 128:
+    if i <= 128:     # first chirp
         y1_im.append(y1_2[i])
 x1_im = np.linspace(0, 12.1, len(y1_im))
 
 y2 = []
 for i in range(len(y2_1)):
-    if i <= 128:
+    if i <= 128:   # first chirp
         y2.append(y2_1[i])
 x2 = np.linspace(0, 12.1, len(y2))
+
+
+
 # --------------------------------------------------------------
 dt = 12.1 / len(y1)
 n = len(x1)
@@ -96,3 +111,4 @@ plt.plot(freq[L], PSD[L], 1)
 
 
 plt.show()
+'''
