@@ -37,8 +37,10 @@ for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and inc
 # --------------------------------- PLOT DATA --------------------------------
 # Another way of getting the duration would be either '12.1 / 128' or 'radar_time[1] - radar_time[0]'.
 # These are not the same but I don't know what the difference is.
+# 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.
 duration = int(str(radar_msg[1].ts - radar_msg[0].ts))/1e9  # seconds. Originally is type 'genpy.rostime.Duration'.
-t = np.linspace(0, duration, len(chirps[0][0]))    # x-axis [seconds]
+chirp_time = duration / no_chirps
+t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
 y = chirps[0][0]
 
 plt.suptitle('RADAR DATA')
@@ -62,3 +64,4 @@ plt.title('rx1_re (transformed)')
 plt.xlabel('Frequency [Hz]')
 plt.ylabel('Density [no idea]')
 plt.show()
+
