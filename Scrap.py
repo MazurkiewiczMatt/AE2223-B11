@@ -96,16 +96,21 @@ plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
 indices = PSD2 > threshold  # these are also valid for the list 'freq'
 freq2 = freq[L[0]:L[-1]]
 freq_peaks = []
+index_numbers = []
 for i in range(len(indices)):
     if indices[i]:
         freq_peaks.append(freq2[i])
+        index_numbers.append(i)
 
-for j in range(len(indices)):
-    if indices[j] and indices[j+1]:  # if two nodes next to each other are peaks, then this is one peak.
-        if PSD2[j] < PSD2[j+1]:  # compare which peak is the largest one, then choose this one.
-            indices[j] = False
-        else:
-            indices[j+1] = False
+for j in range(len(index_numbers) - 1):
+    print(j)
+    print('freq2 ' + str(freq2[index_numbers[j]]))
+    print('freq2 j+1   ' + str(freq2[index_numbers[j+1]]))
+
+    if PSD2[index_numbers[j]] < PSD2[index_numbers[j+1]]:   # if two nodes next to each other are peaks, then this is one peak.
+        indices[index_numbers[j]] = False
+    else:
+        indices[index_numbers[j+1]] = False
 
 freq_peaks = []   # reset the peaks and construct it again
 for i in range(len(indices)):
