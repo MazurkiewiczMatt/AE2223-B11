@@ -79,7 +79,7 @@ print('\n\n\n\n' + str(PSD))
 print(freq)
 
 plt.subplot(1, 2, 2)
-plt.plot(freq[L], PSD[L], 1, marker='o')
+plt.plot(freq[L], PSD[L], marker='o')
 plt.title('rx1_re (transformed)')
 plt.xlabel('Frequency [Hz]')
 plt.ylabel('Density [no idea]')
@@ -92,10 +92,22 @@ PSD2 = PSD[L[0]:L[-1]]
 peak_index = np.argmax(PSD2)   # match x interval with the graph. peak is the largest peak
 peak_value = PSD2[peak_index]
 threshold = peak_value / 3
-plt.hlines(threshold, freq[L[0]], freq[L[-1]])
+plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
 indices = PSD2 > threshold  # these are also valid for the list 'freq'
-freq_peaks = []
 freq2 = freq[L[0]:L[-1]]
+freq_peaks = []
+for i in range(len(indices)):
+    if indices[i]:
+        freq_peaks.append(freq2[i])
+
+for j in range(len(indices)):
+    if indices[j] and indices[j+1]:  # if two nodes next to each other are peaks, then this is one peak.
+        if PSD2[j] < PSD2[j+1]:  # compare which peak is the largest one, then choose this one.
+            indices[j] = False
+        else:
+            indices[j+1] = False
+
+freq_peaks = []   # reset the peaks and construct it again
 for i in range(len(indices)):
     if indices[i]:
         freq_peaks.append(freq2[i])
