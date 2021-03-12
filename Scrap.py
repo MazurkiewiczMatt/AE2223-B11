@@ -57,12 +57,6 @@ amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
     amp_tx_1.append(amplitude)
     phase_tx_1.append(phase)'''
 
-B = 250e6   # Hz
-c = 2.99792458e8  # m/s
-T = duration
-freq = 80    # Hz
-R = c * T * freq / (2 * B)
-print(str(R) + '  meters')
 
 # ---------------------------------- PLOT DATA -----------------------------------
 
@@ -73,20 +67,49 @@ plt.title('rx1_re (raw)')
 plt.xlabel('Time [s]')
 plt.ylabel('no idea')
 
-n_zeros = 50
-t = np.linspace(0, chirp_time, len(chirps[0][0]) + n_zeros)    # x-axis [seconds]
-amplitude = np.append(amplitude, np.zeros(n_zeros))
 dt = duration / len(amplitude)
 n = len(t)
 
-f_hat = np.fft.fft(amplitude, n) #already zero padded according to np documentation 
-PSD = f_hat * np.conj(f_hat) / n
+f_hat = np.fft.fft(amplitude, n)   #already zero padded according to np documentation
+PSD = np.real(f_hat * np.conj(f_hat) / n)
 freq = (1/(dt*n)) * np.arange(n)   # Hz
-L = np.arange(1, np.floor(n/2), dtype='int')
+L = np.arange(1, np.floor(n/2), dtype='int')  # I think the 1 excludes the first data point
+
+print('\n\n\n\n' + str(PSD))
+print(freq)
 
 plt.subplot(1, 2, 2)
-plt.plot(freq[L], PSD[L], 1)
+plt.plot(freq[L], PSD[L], 1, marker='o')
 plt.title('rx1_re (transformed)')
 plt.xlabel('Frequency [Hz]')
 plt.ylabel('Density [no idea]')
+
+# ------------------------------------- CALCULATIONS -------------------------------------------
+# Step 1: find the peaks (use closest peak?)
+# Method: find the maximum point in the data, divide it by 2 and use that as a threshold to detect other peaks.
+# Then select the peak with the lowest frequency (x-axis). If we want multi-target detection, skip this step.
+PSD2 = PSD[L[0]:L[-1]]
+peak_index = np.argmax(PSD2)   # match x interval with the graph. peak is the largest peak
+peak_value = PSD2[peak_index]
+threshold = peak_value / 3
+plt.hlines(threshold, freq[L[0]], freq[L[-1]])
+indices = PSD2 > threshold  # these are also valid for the list 'freq'
+freq_peaks = []
+freq2 = freq[L[0]:L[-1]]
+for i in range(len(indices)):
+    if indices[i]:
+        freq_peaks.append(freq2[i])
+
+print('indices: ' + str(indices))
+print('freq_peaks: ' + str(freq_peaks))
+
+B = 250e6   # Hz
+c = 2.99792458e8  # m/s
+T = duration
+freq1 = 31.3    # Hz
+freq2 = 78    # Hz
+R1 = c * T * freq1 / (2 * B)
+R2 = c * T * freq2 / (2 * B)
+print(str(R1) + ' meters')
+print(str(R2) + ' meters')
 plt.show()
