@@ -4,18 +4,19 @@ import math
 from matplotlib import pyplot as plt
 
 # ---------------------------- IMPORT BAG -------------------------------
-bag = rosbag.Bag('1.bag')
-print(bag)
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
 events = []
 imu = []
 optitrack = []
 radar_time = []
 radar_msg = []
-for topic, msg, t in bag.read_messages(topics=['/radar/data']):
-    radar_time.append(t)
-    radar_msg.append(msg)
-bag.close()
+
+with rosbag.Bag('1.bag') as bag:
+    print(bag)
+    for topic, msg, t in bag.read_messages(topics=['/radar/data']):
+        radar_time.append(t)
+        radar_msg.append(msg)
+
 print(radar_msg[0])
 # ---------------------------------- LOAD DATA --------------------------------
 # This is the data from a single datapoint (time interval)
