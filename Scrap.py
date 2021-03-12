@@ -73,7 +73,7 @@ amplitude = np.append(amplitude, np.zeros(n_zeros))
 dt = duration / len(amplitude)
 n = len(t)
 
-f_hat = np.fft.fft(amplitude, n)
+f_hat = np.fft.fft(amplitude, n) #already zero padded according to np documentation 
 PSD = f_hat * np.conj(f_hat) / n
 freq = (1/(dt*n)) * np.arange(n)   # Hz
 L = np.arange(1, np.floor(n/2), dtype='int')
