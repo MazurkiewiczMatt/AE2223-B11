@@ -3,6 +3,12 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 
+
+def d_to_float(drt):
+    # converts genpy.rostime.Duration to a float
+    return drt.secs + drt.nsecs / 1e9
+
+
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
 events = []
@@ -41,7 +47,7 @@ for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and inc
 # Another way of getting the duration would be either '12.1 / 128' or 'radar_time[1] - radar_time[0]'.
 # These are not the same but I don't know what the difference is.
 # 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.
-duration = int(str(radar_msg[1].ts - radar_msg[0].ts))/1e9  # seconds. Originally is type 'genpy.rostime.Duration'.
+duration = d_to_float(radar_msg[1].ts - radar_msg[0].ts)  # seconds. Originally is type 'genpy.rostime.Duration'.
 chirp_time = duration / no_chirps
 t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
 amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
@@ -84,4 +90,3 @@ plt.title('rx1_re (transformed)')
 plt.xlabel('Frequency [Hz]')
 plt.ylabel('Density [no idea]')
 plt.show()
-
