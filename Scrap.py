@@ -23,19 +23,22 @@ with rosbag.Bag('1.bag') as bag:
         radar_time.append(t)
         radar_msg.append(msg)
 
-print(radar_msg[0])
+timestamp = 0   # each timestamp is a chirp. Can be used to see what happens over time. Note: in the code there is
+# timestamp +1, so if we want to see the last chirp, we need to change the code a bit.
+
+print(radar_msg[timestamp])
 # ---------------------------------- LOAD DATA --------------------------------
 # This is the data from a single datapoint (time interval)
-rx1_re = np.array(radar_msg[0].data_rx1_re)
-rx1_im = np.array(radar_msg[0].data_rx1_im)
-rx2_re = np.array(radar_msg[0].data_rx2_re)
-rx2_im = np.array(radar_msg[0].data_rx2_im)
+rx1_re = np.array(radar_msg[timestamp].data_rx1_re)
+rx1_im = np.array(radar_msg[timestamp].data_rx1_im)
+rx2_re = np.array(radar_msg[timestamp].data_rx2_re)
+rx2_im = np.array(radar_msg[timestamp].data_rx2_im)
 
 # The list 'chirps' is organised as follows. If the list is chirps[i][j] then i indicates the current chirp,
 # and j indicates the measurement type of that chirp (rx1_re or rx1_im etc.).
 y = [rx1_re, rx1_im, rx2_re, rx2_im]
-no_chirps = radar_msg[0].dimx
-length_chirp = radar_msg[0].dimy
+no_chirps = radar_msg[timestamp].dimx
+length_chirp = radar_msg[timestamp].dimy
 chirps = []
 for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and including no_chirps - 1.
     temp_lst = []  # temporary list to organise the chirps list properly
@@ -47,7 +50,7 @@ for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and inc
 # Another way of getting the duration would be either '12.1 / 128' or 'radar_time[1] - radar_time[0]'.
 # These are not the same but I don't know what the difference is.
 # 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.
-duration = d_to_float(radar_msg[1].ts - radar_msg[0].ts)  # seconds. Originally is type 'genpy.rostime.Duration'.
+duration = d_to_float(radar_msg[timestamp+1].ts - radar_msg[timestamp].ts)  # seconds. Originally is type 'genpy.rostime.Duration'.
 chirp_time = duration / no_chirps
 t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
 amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
