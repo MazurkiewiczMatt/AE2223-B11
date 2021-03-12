@@ -126,10 +126,8 @@ print('freq_peaks: ' + str(freq_peaks))
 B = 250e6   # Hz
 c = 2.99792458e8  # m/s
 T = duration
-freq1 = 31.3    # Hz
-freq2 = 78    # Hz
-R1 = c * T * freq1 / (2 * B)
-R2 = c * T * freq2 / (2 * B)
-print(str(R1) + ' meters')
-print(str(R2) + ' meters')
+range_lst = []
+for k in freq_peaks:
+    range_lst.append(c * T * k / (2 * B))
+print(str(range_lst) + ' meters')
 plt.show()
