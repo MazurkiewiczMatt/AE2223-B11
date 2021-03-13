@@ -23,8 +23,8 @@ with rosbag.Bag('1.bag') as bag:
         radar_time.append(t)
         radar_msg.append(msg)
 
-timestamp = 0   # each timestamp is a chirp. Can be used to see what happens over time. Note: in the code there is
-# timestamp +1, so if we want to see the last chirp, we need to change the code a bit.
+timestamp = 0   # each timestamp is a message. Can be used to see what happens over time. Note: in the code there is
+# timestamp +1, so if we want to see the last message, we need to change the code a bit.
 
 print(radar_msg[timestamp])
 # ---------------------------------- LOAD DATA --------------------------------
@@ -108,12 +108,12 @@ for i in range(len(indices)):
 for j in range(len(index_numbers) - 1):
     print(j)
     print('freq2 ' + str(freq2[index_numbers[j]]))
-    print('freq2 j+1   ' + str(freq2[index_numbers[j+1]]))
+    print('freq2 j+1   ' + str(freq2[index_numbers[j]+1]))
 
-    if PSD2[index_numbers[j]] < PSD2[index_numbers[j+1]]:   # if two nodes next to each other are peaks, then this is one peak.
+    if PSD2[index_numbers[j]] < PSD2[index_numbers[j]+1]:   # if two nodes next to each other are peaks, then this is one peak.
         indices[index_numbers[j]] = False
     else:
-        indices[index_numbers[j+1]] = False
+        indices[index_numbers[j]+1] = False
 
 freq_peaks = []   # reset the peaks and construct it again
 for i in range(len(indices)):
