@@ -95,9 +95,8 @@ plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
 indices = PSD2 > threshold  # these are also valid for the list 'freq'
 freq2 = freq[L[0]:L[-1]]
 index_numbers = []
-for i in range(len(indices)):
-    if indices[i]:
-        index_numbers.append(i)
+
+index_numbers = [i for i, value in enumerate(indices) if value]  # get indices of true values in indices list
 
 for j in range(len(index_numbers) - 1):
     print(j)
