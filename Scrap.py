@@ -48,7 +48,7 @@ for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and inc
 duration = (radar_msg[timestamp+1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
 chirp_time = duration / no_chirps
 t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
-amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
+# amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
 '''for i in range(len(y1)):
     amplitude = math.sqrt((y1_im[i])2+(y1[i])2)
     phase = math.atan2(y1_im[i],y1[i])
@@ -60,16 +60,17 @@ amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
 
 plt.suptitle('RADAR DATA')
 plt.subplot(1, 2, 1)
-plt.plot(t, amplitude)
+plt.plot(t, chirps[0][0])
+plt.plot(t, chirps[0][1])
 plt.title('rx1_re (raw)')
 plt.xlabel('Time [s]')
 plt.ylabel('no idea')
 
-dt = duration / len(amplitude)
+dt = duration / len(chirps[0][0])
 n = len(t)
 
-f_hat = np.fft.fft(amplitude, n)   #already zero padded according to np documentation
-PSD = np.real(f_hat * np.conj(f_hat) / n)
+f_hat = np.fft.fft(chirps[0][0], n)   #already zero padded according to np documentation
+PSD = np.real(f_hat * np.conj(f_hat) / n)   # Calculates the amplitude
 freq = (1/(dt*n)) * np.arange(n)   # Hz
 L = np.arange(1, np.floor(n/2), dtype='int')  # I think the 1 excludes the first data point
 
