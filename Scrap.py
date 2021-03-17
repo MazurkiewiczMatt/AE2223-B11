@@ -4,7 +4,6 @@ import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 
-
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
 events = []
@@ -18,10 +17,12 @@ with rosbag.Bag('1.bag') as bag:
         radar_time.append(t)
         radar_msg.append(msg)
 
-timestamp = 0   # each timestamp is a message. Can be used to see what happens over time. Note: in the code there is
+timestamp = 0  # each timestamp is a message. Can be used to see what happens over time. Note: in the code there is
 # timestamp +1, so if we want to see the last message, we need to change the code a bit.
 
 print(radar_msg[timestamp])
+
+
 # ---------------------------------- LOAD DATA --------------------------------
 # This is the data from a single datapoint (time interval)
 def chirp_func(timestamp):
@@ -38,10 +39,12 @@ def chirp_func(timestamp):
     chirps = []
     for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and including no_chirps - 1.
         temp_lst = []  # temporary list to organise the chirps list properly
-        for j in y:   # Each j is one type of measurement.
-            temp_lst.append(j[length_chirp*i:length_chirp*(i+1)])   # Add the data that correspond to the current chirp
+        for j in y:  # Each j is one type of measurement.
+            temp_lst.append(
+                j[length_chirp * i:length_chirp * (i + 1)])  # Add the data that correspond to the current chirp
         chirps.append(temp_lst)
     return chirps, no_chirps, length_chirp
+
 
 chirps, no_chirps, length_chirp = chirp_func(timestamp)
 
@@ -49,9 +52,9 @@ chirps, no_chirps, length_chirp = chirp_func(timestamp)
 # Another way of getting the duration would be either '12.1 / 128' or 'radar_time[1] - radar_time[0]'.
 # These are not the same but I don't know what the difference is.
 # 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.
-duration = (radar_msg[timestamp+1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
+duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
 chirp_time = duration / no_chirps
-t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
+t = np.linspace(0, chirp_time, len(chirps[0][0]))  # x-axis [seconds]
 y1 = chirps[0][0]  # real
 y2 = chirps[0][1]  # imaginary
 '''for i in range(len(y1)):
@@ -60,46 +63,48 @@ y2 = chirps[0][1]  # imaginary
     amp_tx_1.append(amplitude)
     phase_tx_1.append(phase)'''
 
+
 # ---------------------------------- PLOT DATA -----------------------------------
 # fucntion
-#plt.suptitle('RADAR DATA')
-#plt.subplot(1, 2, 1)
-#plt.plot(t, chirps[0][0])
-#plt.plot(t, chirps[0][1])
-#plt.title('rx1_re (raw)')
-#plt.xlabel('Time [s]')
-#plt.ylabel('no idea')
+# plt.suptitle('RADAR DATA')
+# plt.subplot(1, 2, 1)
+# plt.plot(t, chirps[0][0])
+# plt.plot(t, chirps[0][1])
+# plt.title('rx1_re (raw)')
+# plt.xlabel('Time [s]')
+# plt.ylabel('no idea')
 
 def fourier(chirps, t, realim):
-    dt = duration / len(chirps[0][realim]) #realim rx1 0,1 rx2 = 2,3  (0, 2 real; 1, 3 imaginary)
+    dt = duration / len(chirps[0][realim])  # realim rx1 0,1 rx2 = 2,3  (0, 2 real; 1, 3 imaginary)
     n = len(t)
-    #Function  
-    f_hat = np.fft.fft(chirps[0][realim], n)   #already zero padded according to np documentation
-    PSD = np.real(f_hat * np.conj(f_hat) / n)   # Calculates the amplitude
-    freq = (1/(dt*n)) * np.arange(n)   # Hz
-    L = np.arange(1, np.floor(n/2), dtype='int')  # I think the 1 excludes the first data point
+    # Function
+    f_hat = np.fft.fft(chirps[0][realim], n)  # already zero padded according to np documentation
+    PSD = np.real(f_hat * np.conj(f_hat) / n)  # Calculates the amplitude
+    freq = (1 / (dt * n)) * np.arange(n)  # Hz
+    L = np.arange(1, np.floor(n / 2), dtype='int')  # I think the 1 excludes the first data point
     return PSD, freq, L
+
 
 PSD, freq, L = fourier(chirps, t, 0)
 fig = plt.figure()
 ax1 = fig.subplots()
-#plt.loglog(basey=10)
-#plt.yscale("log")
+# plt.loglog(basey=10)
+# plt.yscale("log")
 plt.ylim(0, 10000)
 p, = ax1.plot(freq[L], PSD[L], label='Re')
 
 PSD, freq, L = fourier(chirps, t, 1)
-#fig = plt.figure()
-#ax2 = fig.subplots()
-#plt.loglog(basey=10)
-#plt.yscale("log")
+# fig = plt.figure()
+# ax2 = fig.subplots()
+# plt.loglog(basey=10)
+# plt.yscale("log")
 plt.ylim(0, 10000)
 p2, = ax1.plot(freq[L], PSD[L], label='Im')
 plt.legend()
-#print('\n\n\n\n' + str(PSD))
-#print(freq)
+# print('\n\n\n\n' + str(PSD))
+# print(freq)
 
-#plt.subplot(1, 2, 2)
+# plt.subplot(1, 2, 2)
 '''fig = plt.figure()
 ax = fig.subplots()
 plt.subplots_adjust(bottom = 0.25)
@@ -108,34 +113,37 @@ plt.title('rx1_re (transformed)')
 plt.xlabel('Frequency [Hz]')
 plt.ylabel('Density [no idea]')'''
 
-#slider
-ax_slide = plt.axes([0.25,0.02,0.65,0.03])
+# slider
+ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
 s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=188, valinit=0, valstep=1)
-#update
+
+
+# update
 def update(val):
     current_v = s_factor.val
     timestamp = int(current_v)
     chirps, no_chirps, length_chirp = chirp_func(timestamp)
-    duration = (radar_msg[timestamp+1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
+    duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
     chirp_time = duration / no_chirps
-    t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
+    t = np.linspace(0, chirp_time, len(chirps[0][0]))  # x-axis [seconds]
     y1 = chirps[0][0]  # real
     y2 = chirps[0][1]  # imaginary
-    print(t[1],y1[1],timestamp, "Still Running")
-    
+    print(t[1], y1[1], timestamp, "Still Running")
+
     dt = duration / len(chirps[0][0])
     n = len(t)
-    #Function  
+    # Function
     PSD, freq, L = fourier(chirps, t, 0)
     p.set_ydata(PSD[L])
-    
+
     PSD, freq, L = fourier(chirps, t, 1)
     p2.set_ydata(PSD[L])
-    
-    fig.canvas.draw()
-    #fig2.canvas.draw()
 
-#calling function
+    fig.canvas.draw()
+    # fig2.canvas.draw()
+
+
+# calling function
 s_factor.on_changed(update)
 
 # ------------------------------------- CALCULATIONS -------------------------------------------
@@ -143,10 +151,10 @@ s_factor.on_changed(update)
 # Method: find the maximum point in the data, divide it by 2 and use that as a threshold to detect other peaks.
 # Then select the peak with the lowest frequency (x-axis). If we want multi-target detection, skip this step.
 PSD2 = PSD[L[0]:L[-1]]
-peak_index = np.argmax(PSD2)   # match x interval with the graph. peak is the largest peak
+peak_index = np.argmax(PSD2)  # match x interval with the graph. peak is the largest peak
 peak_value = PSD2[peak_index]
 threshold = peak_value / 3
-#plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
+# plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
 indices = PSD2 > threshold  # these are also valid for the list 'freq'
 freq2 = freq[L[0]:L[-1]]
 index_numbers = []
@@ -154,24 +162,25 @@ index_numbers = []
 index_numbers = [i for i, value in enumerate(indices) if value]  # get indices of true values in indices list
 
 for j in range(len(index_numbers) - 1):
-    #print(j)
-    #print('freq2 ' + str(freq2[index_numbers[j]]))
-    #print('freq2 j+1   ' + str(freq2[index_numbers[j]+1]))
+    # print(j)
+    # print('freq2 ' + str(freq2[index_numbers[j]]))
+    # print('freq2 j+1   ' + str(freq2[index_numbers[j]+1]))
 
-    if PSD2[index_numbers[j]] < PSD2[index_numbers[j]+1]:   # if two nodes next to each other are peaks, then this is one peak.
+    if PSD2[index_numbers[j]] < PSD2[
+        index_numbers[j] + 1]:  # if two nodes next to each other are peaks, then this is one peak.
         indices[index_numbers[j]] = False
     else:
-        indices[index_numbers[j]+1] = False
+        indices[index_numbers[j] + 1] = False
 
 freq_peaks = []
 for i in range(len(indices)):
     if indices[i]:
         freq_peaks.append(freq2[i])
 
-#print('indices: ' + str(indices))
+# print('indices: ' + str(indices))
 print('freq_peaks: ' + str(freq_peaks))
 
-B = 250e6   # Hz
+B = 250e6  # Hz
 c = 2.99792458e8  # m/s
 T = duration
 range_lst = []
