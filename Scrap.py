@@ -103,10 +103,10 @@ for j in range(len(index_numbers) - 1):
     print('freq2 ' + str(freq2[index_numbers[j]]))
     print('freq2 j+1   ' + str(freq2[index_numbers[j]+1]))
 
-    if PSD2[index_numbers[j]] < PSD2[index_numbers[j]+1]:   # if two nodes next to each other are peaks, then this is one peak.
-        indices[index_numbers[j]] = False
-    else:
-        indices[index_numbers[j]+1] = False
+    if index_numbers[j + 1] == index_numbers[j] + 1:
+        # if two nodes next to each other are peaks, then this is one peak.
+        indices[index_numbers[j]] = (PSD2[index_numbers[j]] > PSD2[index_numbers[j]+1])
+        indices[index_numbers[j]+1] = not(indices[index_numbers[j]])
 
 freq_peaks = []
 for i in range(len(indices)):
