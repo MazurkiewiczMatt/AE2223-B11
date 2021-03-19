@@ -8,7 +8,7 @@ from matplotlib.widgets import Slider
 # NO SLIDER
 # NO SLIDER
 # NO SLIDER
-# NO SLIDER
+# NO SLIDERR
 
 def range_calc(PSD, L, freq):
     PSD2 = PSD[L[0]:L[-1]]
