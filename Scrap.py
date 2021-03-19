@@ -3,6 +3,13 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
+# SLIDER
+# SLIDER
+# SLIDER
+# SLIDER
+# SLIDER
+# SLIDER
+
 
 def range_calc(PSD, L, freq):
     

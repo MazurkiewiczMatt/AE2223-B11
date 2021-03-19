@@ -3,7 +3,12 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
-
+# NO SLIDER
+# NO SLIDER
+# NO SLIDER
+# NO SLIDER
+# NO SLIDER
+# NO SLIDER
 
 def range_calc(PSD, L, freq):
     PSD2 = PSD[L[0]:L[-1]]
@@ -34,7 +39,7 @@ def range_calc(PSD, L, freq):
             freq_peaks.append(freq2[i])
 
     # print('indices: ' + str(indices))
-    print('freq_peaks: ' + str(freq_peaks))
+    #print('freq_peaks: ' + str(freq_peaks))
 
     B = 250e6  # Hz
     c = 2.99792458e8  # m/s
@@ -42,7 +47,7 @@ def range_calc(PSD, L, freq):
     range_lst = []
     for k in freq_peaks:
         range_lst.append(c * T * k / (2 * B))
-    print(str(range_lst) + ' meters')
+    #print(str(range_lst) + ' meters')
     return range_lst
 
 
@@ -197,16 +202,16 @@ plt.xlabel('Frequency [Hz]')
 plt.ylabel('Density [no idea]')'''
 
 # slider
-ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
-s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=186, valinit=0, valstep=1)
+#ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
+#s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=186, valinit=0, valstep=1)
 
 # list of ranges
 range_drone = []
 
 
 # update
-def update(val):
-    current_v = s_factor.val
+for i in range(186):
+    current_v = i
     timestamp = int(current_v)
     chirps, no_chirps, length_chirp = chirp_func(timestamp)
     duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
@@ -227,17 +232,36 @@ def update(val):
 
     range_temp = range_calc(PSD, L, freq)
     range_drone.append(range_temp)
-    print('range drone....', range_drone)
+    #print('range drone....', range_drone)
 
-    fig.canvas.draw()
     # fig2.canvas.draw()
+    print(i)
 
 
 # calling function
-s_factor.on_changed(update)
 
 # ------------------------------------- CALCULATIONS -------------------------------------------
 # Step 1: find the peaks (use closest peak?)
 # Method: find the maximum point in the data, divide it by 2 and use that as a threshold to detect other peaks.
 # Then select the peak with the lowest frequency (x-axis). If we want multi-target detection, skip this step.
+#print(range_drone)
+
+
+plt.show()
+
+#t = np.linspace(0,186, 1)
+#y = np.array(range_drone)
+# y = [[1, 2], [3, 4, 5], [6, 7]]  ---> y = [1, 2, 3, 4, 5, 6, 7]
+# t = [0, 0, 1, 1 ,1, 2, 2] we cpount number of elements and plot woth same x
+t1 = np.array([])
+y1 = np.array([])
+for i in range(len(range_drone)):
+    for j in range(len(range_drone[i])):
+        t1 = np.append(t1, i)
+        y1 = np.append(y1, range_drone[i][j])
+
+plt.scatter(t1, y1)
+plt.xlabel('message number ~ time')
+plt.ylabel('range [m]')
+#plt.plot(np.unique(t1), np.poly1d(np.polyfit(t1, y1, 1))(np.unique(t1)))
 plt.show()
