@@ -1,12 +1,13 @@
 import rosbag
 import numpy as np
+from scipy.signal import find_peaks
 import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 # SLIDER
 # SLIDER
 # SLIDER
-# SLIDER
+# SLIDER this has a slider
 # SLIDER
 # SLIDER
 
@@ -14,43 +15,59 @@ from matplotlib.widgets import Slider
 def range_calc(PSD, L, freq):
     
     PSD2 = PSD[L[0]:L[-1]]
-    peak_index = np.argmax(PSD2)  # match x interval with the graph. peak is the largest peak
-    peak_value = PSD2[peak_index]
-    threshold = peak_value / 10
+    freq2 = freq[L[0]:L[-1]]
+    indices = find_peaks(PSD2)[0]
+    print(indices)
+    #for i in range(1, len(dummy1)-2):
+        
+        
+        
+    '''peak_index = np.argmax(PSD2)  # match x interval with the graph. peak is the largest peak
+    peak_value = PSD2[peak_index] #
+    threshold = 0 * peak_value / 10 #arbitrary poitn we set as reference for frqeuecies to take
     # plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
     indices = PSD2 > threshold  # these are also valid for the list 'freq'
     freq2 = freq[L[0]:L[-1]]
     index_numbers = []
 
     index_numbers = [i for i, value in enumerate(indices) if value]  # get indices of true values in indices list
-
+    #print(index_numbers)
     for j in range(len(index_numbers) - 1):
         # print(j)
         # print('freq2 ' + str(freq2[index_numbers[j]]))
         # print('freq2 j+1   ' + str(freq2[index_numbers[j]+1]))
 
-        if PSD2[index_numbers[j]] < PSD2[
-            index_numbers[j] + 1]:  # if two nodes next to each other are peaks, then this is one peak.
-            indices[index_numbers[j]] = False
-        else:
-            indices[index_numbers[j] + 1] = False
+        if index_numbers[j + 1] == index_numbers[j] + 1:
+        # if two nodes next to each other are peaks, then this is one peak.
+            indices[index_numbers[j]] = (PSD2[index_numbers[j]] > PSD2[index_numbers[j]+1])
+            indices[index_numbers[j]+1] = not(indices[index_numbers[j]])'''
 
     freq_peaks = []
     for i in range(len(indices)):
-        if indices[i]:
-            freq_peaks.append(freq2[i])
+        index = indices[i]
+        freq_peaks.append(freq2[index])
+    print('indices: ' + str(indices))
+    print('\n\nfreq_peaks: ' + str(freq_peaks))
 
-    # print('indices: ' + str(indices))
-    print('freq_peaks: ' + str(freq_peaks))
+    freq_peaks_intermediate = []
+    for i in range(len(freq_peaks)):
+        freq_intermediate = freq_peaks[i]
+        if freq_intermediate < 260:
+            freq_peaks_intermediate.append(freq_intermediate)
 
+    freq_peaks = freq_peaks_intermediate
+    
+    
     B = 250e6  # Hz
     c = 2.99792458e8  # m/s
-    T = duration
+    T = chirp_time
+    print(duration)
     range_lst = []
     for k in freq_peaks:
-        range_lst.append(c * T * k / (2 * B))
-    print(str(range_lst) + ' meters')
-    return range_lst
+        range_lst = np.append(range_lst, c * T * k / (2 * B))
+    print(str(range_lst) + ' meters\n\n')
+    # Range 10m corresponds to 261 Hz.
+    return range_lst, freq_peaks
 
 
 # ---------------------------- IMPORT BAG -------------------------------
@@ -83,9 +100,9 @@ def chirp_func(timestamp):
     # The list 'chirps' is organised as follows. If the list is chirps[i][j] then i indicates the current chirp,
     # and j indicates the measurement type of that chirp (rx1_re or rx1_im etc.).
     y = [rx1_re, rx1_im, rx2_re, rx2_im]
-    no_chirps = radar_msg[int(timestamp)].dimx
-    length_chirp = radar_msg[int(timestamp)].dimy
-    chirps_temp = []
+    no_chirps = radar_msg[int(timestamp)].dimx #16 
+    length_chirp = radar_msg[int(timestamp)].dimy #128 (when u print or run the code u see it)
+    chirps_temp = [] #intialize list 
     for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and including no_chirps - 1.
         temp_lst = []  # temporary list to organise the chirps list properly
         for j in y:  # Each j is one type of measurement.
@@ -101,7 +118,7 @@ def chirp_func(timestamp):
     #temp_list4 = np.array([])  # rx2im
 
     final_list = [[], [], [], []]    # i is the type (rx1re etc), j is the value, len.128
-    for i in range(128):
+    for i in range(128): #Combine 16 chirps to 1 chirp for one timestamp
         avg_calc_rx1re = np.array([])
         avg_calc_rx1im = np.array([])
         avg_calc_rx2re = np.array([])
@@ -131,8 +148,8 @@ def chirp_func(timestamp):
 
     chirps = np.array(final_list)
     return chirps, no_chirps, length_chirp
-# Chirps: We have a list, in that list 16 other lists, in these lists we have 4 lists (rx1re,rx1im,rx2re rx2img), in that list 128 values for each.
-
+# Chirps: We have a list, in that list 16 other lists, in these lists we have 4 lists (rx1re,rx1im,rx2re rx2img), in that list 128 values for each. (real and complex stuff)
+# the line above is your point of reference (the line is also reffered to as the sacred text) 
 chirps, no_chirps, length_chirp = chirp_func(timestamp)
 
 # --------------------------------- PROCESS DATA --------------------------------
@@ -140,10 +157,10 @@ chirps, no_chirps, length_chirp = chirp_func(timestamp)
 # These are not the same but I don't know what the difference is.
 # 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.
 duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
-chirp_time = duration / no_chirps
+chirp_time = duration / no_chirps #time for one chirp
 t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
-y1 = chirps[0]  # real
-y2 = chirps[2]  # imaginary
+y1 = chirps[0]  # realrx_1 from line 134 its the list 
+y2 = chirps[2]  # realrx_2
 '''for i in range(len(y1)):
     amplitude = math.sqrt((y1_im[i])2+(y1[i])2)
     phase = math.atan2(y1_im[i],y1[i])
@@ -161,15 +178,15 @@ y2 = chirps[2]  # imaginary
 # plt.xlabel('Time [s]')
 # plt.ylabel('no idea')
 
-def fourier(chirps, t, realim):
+def fourier(chirps, t, realim):  # from the internet
     dt = duration / len(chirps[realim])  # realim rx1 0,1 rx2 = 2,3  (0, 2 real; 1, 3 imaginary)
     n = len(t)
     # Function
     f_hat = np.fft.fft(chirps[realim], n)  # already zero padded according to np documentation
-    PSD = np.real(f_hat * np.conj(f_hat) / n)  # Calculates the amplitude
+    PSD = np.real(f_hat * np.conj(f_hat) / n)  # Calculates the amplitude sqrt(re^2 + im^2) type of thing. Do np.real bc it returns + 0*j.
     freq = (1 / (dt * n)) * np.arange(n)  # Hz
-    L = np.arange(1, np.floor(n / 2), dtype='int')  # I think the 1 excludes the first data point
-    return PSD, freq, L
+    L = np.arange(1, np.floor(n / 2), dtype='int')  #u dont need two "mirrors"
+    return PSD, freq, L 
 
 fig = plt.figure()
 ax1 = fig.subplots()
@@ -184,6 +201,10 @@ PSD, freq, L = fourier(chirps, t, 0)
 #plt.yscale("log")
 plt.ylim(0, 1000)
 p, = ax1.plot(freq[L], PSD[L], label='RX1_re')
+
+#_, freq_peaks = range_calc(PSD, L, freq)
+
+#p3, = ax1.plot(freq_peaks, np.linspace(50, 51, len(freq_peaks)), 'o')
 
 plt.legend()
 
@@ -203,19 +224,19 @@ plt.ylabel('Density [no idea]')'''
 # slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
 s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=186, valinit=0, valstep=1)
-
+# val max is messages in terms of index so start from 0
 # list of ranges
 range_drone = []
 
 # update
 def update(val):
-    current_v = s_factor.val
+    current_v = s_factor.val #get current value on the slider
     timestamp = int(current_v)
     chirps, no_chirps, length_chirp = chirp_func(timestamp)
     duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
     chirp_time = duration / no_chirps
     t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
-    y1 = chirps[0]  # real
+    y1 = chirps[0]  # real rx1 no update basically if not here
     y2 = chirps[2]  # real rx2
     #print(t[1], y1[1], timestamp, "Still Running")
 
@@ -228,10 +249,13 @@ def update(val):
     PSD, freq, L = fourier(chirps, t, 1)
     p2.set_ydata(PSD[L])
 
-    range_temp = range_calc(PSD, L, freq)
-    range_drone.append(range_temp)
-    print('range drone....', range_drone)
+    range_temp, freq_peaks = range_calc(PSD, L, freq)
+    
+    #p3, = ax1.plot(freq_peaks, np.linspace(50, 51, len(freq_peaks)), 'o')
+    #range_drone.append(range_temp)
+    #print('range drone....', range_drone)
 
+    #p3.set_xdata(freq_peaks)
     fig.canvas.draw()
     # fig2.canvas.draw()
 
