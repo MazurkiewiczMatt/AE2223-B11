@@ -14,7 +14,7 @@ def range_calc(PSD, L, freq):
     PSD2 = PSD[L[0]:L[-1]]
     peak_index = np.argmax(PSD2)  # match x interval with the graph. peak is the largest peak
     peak_value = PSD2[peak_index]
-    threshold = peak_value / 10
+    threshold = peak_value / 2    
     # plt.hlines(threshold, 0, freq[L[-1]], colors='orange')
     indices = PSD2 > threshold  # these are also valid for the list 'freq'
     freq2 = freq[L[0]:L[-1]]
@@ -27,11 +27,10 @@ def range_calc(PSD, L, freq):
         # print('freq2 ' + str(freq2[index_numbers[j]]))
         # print('freq2 j+1   ' + str(freq2[index_numbers[j]+1]))
 
-        if PSD2[index_numbers[j]] < PSD2[
-            index_numbers[j] + 1]:  # if two nodes next to each other are peaks, then this is one peak.
-            indices[index_numbers[j]] = False
-        else:
-            indices[index_numbers[j] + 1] = False
+        if index_numbers[j + 1] == index_numbers[j] + 1:
+        # if two nodes next to each other are peaks, then this is one peak.
+            indices[index_numbers[j]] = (PSD2[index_numbers[j]] > PSD2[index_numbers[j]+1])
+            indices[index_numbers[j]+1] = not(indices[index_numbers[j]])
 
     freq_peaks = []
     for i in range(len(indices)):
