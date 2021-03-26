@@ -68,12 +68,12 @@ y2 = chirps[2]  # imaginary
 fig = plt.figure()
 ax1 = fig.subplots()
 
-PSD, freq, L = fourier(chirps, t, 2, duration)
+PSD, freq, L, _ = fourier(chirps, t, 2, duration)
 # plt.yscale("log")
 plt.ylim(0, 1000)
 p2, = ax1.plot(freq[L], PSD[L], label='RX2_re')
 
-PSD, freq, L = fourier(chirps, t, 0, duration)
+PSD, freq, L, _ = fourier(chirps, t, 0, duration)
 # plt.yscale("log")
 plt.ylim(0, 1000)
 p, = ax1.plot(freq[L], PSD[L], label='RX1_re')
@@ -112,17 +112,18 @@ for i in range(186):
     y1 = chirps[0]  # real
     y2 = chirps[2]  # real rx2
     # print(t[1], y1[1], timestamp, "Still Running")
+    
 
     dt = duration / len(chirps[0])
     n = len(t)
     # Function
-    PSD, freq, L = fourier(chirps, t, 0, duration)
-    p.set_ydata(PSD[L])
+    PSD, freq, L, phase1 = fourier(chirps, t, 0, duration)
+    p.set_ydata(phase1[L])
 
-    PSD, freq, L = fourier(chirps, t, 1, duration)
-    p2.set_ydata(PSD[L])
+    PSD, freq, L, phase2 = fourier(chirps, t, 1, duration)
+    p2.set_ydata(phase2[L])
 
-    range_temp, _ = range_calc(PSD, L, freq, chirp_time)
+    range_temp, _ = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
     range_drone.append(range_temp)
     #print('range drone....', range_drone)
 

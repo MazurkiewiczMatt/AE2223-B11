@@ -52,6 +52,13 @@ y2 = chirps[2]  # realrx_2
     amp_tx_1.append(amplitude)
     phase_tx_1.append(phase)'''
 
+# Define new axis system for range and angle plot
+dt = duration / len(chirps[0])
+n = len(t)
+# Function
+PSD, freq, L, phase1 = fourier(chirps, t, 0, duration) # added phase and y is now phase data
+PSD, freq, L, phase2 = fourier(chirps, t, 2, duration) # rx_2 rea
+range_temp, freq_peaks, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
 
 # ---------------------------------- PLOT DATA -----------------------------------
 # fucntion
@@ -68,14 +75,14 @@ fig = plt.figure()
 ax1 = fig.subplots()
 
 
-PSD, freq, L = fourier(chirps, t, 2, duration)
+PSD, freq, L, _ = fourier(chirps, t, 2, duration)
 #plt.yscale("log")
-plt.ylim(0, 1000)
+plt.ylim(-10, 10)
 p2, = ax1.plot(freq[L], PSD[L], label='RX2_re')
 
-PSD, freq, L = fourier(chirps, t, 0, duration)
+PSD, freq, L, _ = fourier(chirps, t, 0, duration)
 #plt.yscale("log")
-plt.ylim(0, 1000)
+plt.ylim(-10, 10)
 p, = ax1.plot(freq[L], PSD[L], label='RX1_re')
 
 #_, freq_peaks = range_calc(PSD, L, freq, chirp_time)
@@ -84,6 +91,12 @@ p, = ax1.plot(freq[L], PSD[L], label='RX1_re')
 
 plt.legend()
 
+
+fig = plt.figure()
+ax2 = fig.subplots()
+p3, = ax2.plot(geo_angle_lst, range_temp, 'o', label='obstacle')
+plt.xlim(-38, 38)
+plt.ylim(0, 10)
 '''range_fig = plt.figure()
 ax2 = fig.subplot()
 p3, = ax2.plot()#25 meters larget range anyway'''
@@ -99,10 +112,22 @@ plt.ylabel('Density [no idea]')'''
 
 # slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
-s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=186, valinit=0, valstep=1)
+s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=(len(radar_msg) - 2), valinit=0, valstep=1)
 # val max is messages in terms of index so start from 0
 # list of ranges
 range_drone = []
+
+#Almost heaven
+#west viginia
+#blue ridge mountains
+#shenendoha riveeer
+#life is old therE
+#older than teh trees
+# #younger than the mountains
+#blowin like a breeze
+#COUNTRY ROOOOOAAADS TAKE ME HOOOOOOOME
+#TO THE PLAAINS 
+#WHERE I BELLOOOOOOOONG
 
 # update
 def update(val):
@@ -119,14 +144,14 @@ def update(val):
     dt = duration / len(chirps[0])
     n = len(t)
     # Function
-    PSD, freq, L = fourier(chirps, t, 0, duration)
-    p.set_ydata(PSD[L])
+    PSD, freq, L, phase1 = fourier(chirps, t, 0, duration) # added phase and y is now phase data
+    p.set_ydata(phase1[L])
 
-    PSD, freq, L = fourier(chirps, t, 1, duration)
-    p2.set_ydata(PSD[L])
+    PSD, freq, L, phase2 = fourier(chirps, t, 2, duration) # rx_2 rea
+    p2.set_ydata(phase2[L]) 
 
-    range_temp, freq_peaks = range_calc(PSD, L, freq, chirp_time)
-    
+    range_temp, freq_peaks, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+    p3.set_ydata(range_temp)
     #p3, = ax1.plot(freq_peaks, np.linspace(50, 51, len(freq_peaks)), 'o')
     #range_drone.append(range_temp)
     #print('range drone....', range_drone)
