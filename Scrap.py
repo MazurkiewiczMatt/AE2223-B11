@@ -94,6 +94,10 @@ plt.legend()
 
 fig = plt.figure()
 ax2 = fig.subplots()
+# Need to make geo_angle_lst and range_temp always have the same dimension (each timestamp). Just add the appropriate number of zeroes.
+while len(geo_angle_lst) < 20:
+    geo_angle_lst = np.append(geo_angle_lst, 0)
+    range_temp = np.append(range_temp, 0)
 p3, = ax2.plot(geo_angle_lst, range_temp, 'o', label='obstacle')
 plt.xlim(-38, 38)
 plt.ylim(0, 10)
@@ -149,14 +153,14 @@ def update(val):
 
     PSD, freq, L, phase2 = fourier(chirps, t, 2, duration) # rx_2 rea
     p2.set_ydata(phase2[L]) 
-
+    
     range_temp, freq_peaks, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
-    p3.set_ydata(range_temp)
-    #p3, = ax1.plot(freq_peaks, np.linspace(50, 51, len(freq_peaks)), 'o')
-    #range_drone.append(range_temp)
-    #print('range drone....', range_drone)
+    while len(geo_angle_lst) < 20:
+        geo_angle_lst = np.append(geo_angle_lst, 0)
+        range_temp = np.append(range_temp, 0)
 
-    #p3.set_xdata(freq_peaks)
+    p3.set_ydata(range_temp)
+
     fig.canvas.draw()
     # fig2.canvas.draw()
 

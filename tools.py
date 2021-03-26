@@ -67,6 +67,9 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
         #velocity_lst = np.append(velocity_lst, (c * abs(phase2_peaks[k] - phase1_peaks[k]) / (4 * pi * f_temp * T)))
         except Exception as err:
             print("\033[;1m" + "Error: " + "\033[0;0m" + str(err))
+            geo_angle_lst = np.append(geo_angle_lst, 0)
+            velocity_lst = np.append(velocity_lst, 0)
+
         
     print(str(range_lst) + ' meters')
     print(str(geo_angle_lst) + ' degrees')
