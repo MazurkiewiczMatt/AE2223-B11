@@ -1,5 +1,6 @@
-import cv2 # TO DO: pip install opencv-python
+import cv2 
 import os
+import numpy as np
 
 
 def get_file(file):
@@ -16,42 +17,68 @@ def get_folder_file(folder, file):
     path = get_file(extension)
     return path
 
-def load_images_from_folder(folder):
-    images = []
-    for filename in os.listdir(folder):
-        print(filename)
-        img = cv2.imread(os.path.join(folder,filename))
-        if img is not None:
-            images.append(img)
+
+def loadimgs(save=False):
+    # SETUP
+
+    # Common image size:
+    xsize = 100
+    ysize = 100
+
+    DATA_DIR = r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\images'
+
+    images = np.array([])
+
+    # get a list of files to load
+    f = []
+    for (dirpath, dirnames, filenames) in os.walk(DATA_DIR):
+        f.extend(filenames)
+        break
+
+    images = np.array([0, 0])
+    k = 0
+    for i in f:
+        filename = get_folder_file('images', i)
+        image = cv2.imread(filename)
+        rescaled_image = cv2.resize(image, (xsize, ysize))
+        if save:
+            cv2.imwrite(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\dataset_color\\' + i, rescaled_image)
+        rescaled_image = cv2.cvtColor(src=rescaled_image, code=cv2.COLOR_BGR2GRAY)
+        if save:
+            cv2.imwrite(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\dataset\\' + i, rescaled_image)
+        flat_img = rescaled_image.flatten()
+        name_plane = i.split()[0] 
+        if name_plane == 'AN225':
+            label = 1
+        elif name_plane == 'B747':
+            label = 2
+        elif name_plane == 'B787':
+            label = 3
+        elif name_plane == 'Beluga':
+            label = 4
+        elif name_plane == 'C130':
+            label = 5
+        elif name_plane == 'F16':
+            label = 6
+        elif name_plane == 'A380':
+            label = 7
+        elif name_plane == 'Fokker':
+            label = 8
+        elif name_plane == 'PHLAB':
+            label = 9
+        elif name_plane == 'SS100':
+            label = 10
+
+        images = np.vstack((images, np.array([flat_img, label])))
+        if k == 0:
+            np.delete(images, 0, 0)
+        rescaled_image = cv2.Canny(rescaled_image,100,200)
+        
+        if save:
+            cv2.imwrite(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\dataset_edge\\' + i, rescaled_image)
+        k += 1
+    print(images)
+    print(np.shape(images))
     return images
 
-
-xsize = 100
-ysize = 100
-
-DATA_DIR = r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\images'
-
-# get a list of files to load
-f = []
-for (dirpath, dirnames, filenames) in os.walk(DATA_DIR):
-    f.extend(filenames)
-    break
-paths_list = []
-for i in range(100):
-    paths_list.append(get_folder_file('images', f[i]))
-
-for filename in paths_list:
-    #actual_filename = path.join("images", filename)
-    #print(actual_filename)
-    image = cv2.imread(filename)
-    rescaled_image = cv2.resize(image, (xsize, ysize))
-    # rescaled_image = cv2.resize(image, (xsize, ysize), interpolation = cv2.INTER_AREA)
-    rescaled_image = cv2.cvtColor(src=rescaled_image, code=cv2.COLOR_BGR2GRAY)
-    cv2.imwrite(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\image.png', rescaled_image)
-
-'''
-images_list = load_images_from_folder('images/')
-
-# https://stackoverflow.com/questions/38675389/python-opencv-how-to-load-all-images-from-folder-in-alphabetical-order
-# it works for them???????? magic 
-print(images_list)'''
+loadimgs(False)
