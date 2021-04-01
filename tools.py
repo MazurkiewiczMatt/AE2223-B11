@@ -11,7 +11,7 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
     #phase1_peaks = [freq2[i] if phi_1[i]<260 for i in indices]
     #phase2_peaks = [freq2[i] if phi_2[i]<260 for i in indices]
     # TO DO: fix this and implement the shorter version
-    
+    #0
     freq_peaks = []
     phase1_peaks = []  # is not a peak, but is the phase correponding to the frequency of a peak
     phase2_peaks = []
