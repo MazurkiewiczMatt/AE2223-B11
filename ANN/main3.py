@@ -147,49 +147,7 @@ def test_prediction(index, W1, b1, W2, b2, X, Y):
             prediction = names[p]
         if label == p:
             label = names[p]
-    '''if prediction == [0]:
-        prediction = 'A380'
-    elif prediction == [1]:
-        prediction = 'AN225'
-    elif prediction == [2]:
-        prediction = 'B747'
-    elif prediction == [3]:
-        prediction = 'B787'
-    elif prediction == [4]:
-        prediction = 'Beluga'
-    elif prediction == [5]:
-        prediction = 'C130'
-    elif prediction == [6]:
-        prediction = 'F16'
-    elif prediction == [7]:
-        prediction = 'Fokker'
-    elif prediction == [8]:
-        prediction = 'PHLAB'
-    elif prediction == [9]:
-        prediction = 'SS100'
-    '''
-
-    '''if label == 0:
-        label = 'A380'
-    elif label == 1:
-        label = 'AN225'
-    elif label == 2:
-        label = 'B747'
-    elif label == 3:
-        label = 'B787'
-    elif label == 4:
-        label = 'Beluga'
-    elif label == 5:
-        label = 'C130'
-    elif label == 6:
-        label = 'F16'
-    elif label == 7:
-        label = 'Fokker'
-    elif label == 8:
-        label = 'PHLAB'
-    elif label == 9:
-        label = 'SS100'
-    '''
+   
 
     print("Prediction: ", prediction)
     print("Real: ", label)
