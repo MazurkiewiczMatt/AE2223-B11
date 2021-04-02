@@ -1,148 +1,145 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import os
 
-# HYPERPARAMETERS
+def get_file(file):
+    # Returns the full path, if the file is in the same folder as the main .py program.
+    # Useful if a computer uses some random directory (like mine)
+    path = os.path.join(os.path.dirname(__file__), file)
+    return path
 
-# Test Data
-'''
-INPUT_LAYER = 28*28
-HIDDEN_LAYER = 10
-OUTPUT_LAYER = 10
-'''
 
-INPUT_LAYER = 100*100
-HIDDEN_LAYER = 40   # Hidden layer can maximally be ~99
-OUTPUT_LAYER = 10
+def get_folder_file(folder, file):
+    # Returns the full path, if the file is not in the same folder as the main .py program.
+    # Useful if a computer uses some random directory (like mine)
+    extension = os.path.join(folder, file)
+    path = get_file(extension)
+    return path
 
-data = pd.read_csv(r"C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\x.csv")
-#print(data.head(n=1000)) 
-#at this point, there is 100 rows (1 row = 1 image) and 10002 columns (10000 pixels + label column + useless column)
-data = np.array(data)
-data = data.T
-data = np.delete(data, 0, 0)   # the first column is useless, so delete it
-data = data.T
-m, n = data.shape
-data_pic = data
-np.random.shuffle(data) # shuffle before splitting into dev and training sets
 
-# from here
-data_dev = data[0:100-HIDDEN_LAYER].T
-Y_dev = data_dev[0]
-X_dev = data_dev[1:n]
-X_dev = X_dev / 255.
+def load_data(file_):
+    directory_ = get_file(file_)
+    data = pd.read_csv(directory_)  #r"C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\x.csv"
+    # print(data.head(n=1000))
+    # at this point, there is 100 rows (1 row = 1 image) and 10002 columns (10000 pixels + label column + useless column)
+    data = np.array(data)
+    data = data.T
+    # the first column is useless, so it is deleted
+    data = np.delete(data, 0, 0)
+    data = data.T
+    m, n = data.shape
+    data_pic = data
+    # shuffling before splitting the data into validation and training subsets
+    np.random.shuffle(data)
 
-data_train = data[100-HIDDEN_LAYER:m].T
-Y_train = data_train[0]
-print('Y_train ', Y_train)
-X_train = data_train[1:n]
-X_train = X_train / 255.
-_,m_train = X_train.shape
-# till there makes my brain hurt
-# TO DO: adapt that so it properly gets a label and the data
+    data_valid = data[0:100-HIDDEN_LAYER].T
+    Y_valid = data_valid[0]
+    X_valid = data_valid[1:n]
+    X_valid = X_valid / 255.
 
-def init_params():
+    data_train = data[100-HIDDEN_LAYER:m].T
+    Y_train = data_train[0]
+    print('Y_train ', Y_train)
+    X_train = data_train[1:n]
+    X_train = X_train / 255.
+    dummy, m_train = X_train.shape
+    return n, m, X_train, Y_train, X_valid, Y_valid
+
+
+def init_values():
     W1 = np.random.rand(HIDDEN_LAYER, INPUT_LAYER) - 0.5
     b1 = np.random.rand(HIDDEN_LAYER, 1) - 0.5
     W2 = np.random.rand(OUTPUT_LAYER, HIDDEN_LAYER) - 0.5
     b2 = np.random.rand(OUTPUT_LAYER, 1) - 0.5
     return W1, b1, W2, b2
 
-def ReLU(Z):
-    return Z**2
-    #return np.maximum(Z, 0)
 
-'''
-def Quadratic(Z):
-    return Z**2 + Z + np.eye(m)
+def max_val_function(Z):
+    return np.maximum(Z, 0)
 
-def Quadratic_deriv(Z):
-    return 2 * Z + np.eye(m)
-
-def Cubic(Z):
-    return Z**3 + Z**2 + Z + np.eye(m)
-
-def Cubic_deriv(Z):
-    return 3 * Z**2 + Z + np.eye(m)
-'''
 
 def softmax(Z):
     A = np.exp(Z) / sum(np.exp(Z))
     return A
-    
+
+
+def cubic(Z):
+    return np.power(Z, 3)
+
+
 def forward_prop(W1, b1, W2, b2, X):
-    Z1 = W1.dot(X) + b1    # Z1 is almost always negative, so ReLU returns 0, therefore it won't learn
-    A1 = ReLU(Z1)
+    Z1 = W1.dot(X) + b1
+    A1 = max_val_function(Z1)
     Z2 = W2.dot(A1) + b2
     A2 = softmax(Z2)
     return Z1, A1, Z2, A2
 
-def ReLU_deriv(Z):
-    return 2 * Z
-    #return Z > 0
+
+def larger_val_function(Z):
+    return Z > 0
+
 
 def one_hot(Y):
-    one_hot_Y = np.zeros((Y.size, Y.max() + 1))   # Y.max() + 1
+    one_hot_Y = np.zeros((Y.size, Y.max() + 1))
     one_hot_Y[np.arange(Y.size), Y] = 1
     one_hot_Y = one_hot_Y.T
     return one_hot_Y
 
+
 def backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y):
     one_hot_Y = one_hot(Y)
-    dZ2 = A2 - one_hot_Y    # fine
+    dZ2 = A2 - one_hot_Y
     dW2 = 1 / m * dZ2.dot(A1.T)
     db2 = 1 / m * np.sum(dZ2)
-    dZ1 = W2.T.dot(dZ2) * ReLU_deriv(Z1)
+    dZ1 = W2.T.dot(dZ2) * larger_val_function(Z1)
     dW1 = 1 / m * dZ1.dot(X.T)
     db1 = 1 / m * np.sum(dZ1)
     return dW1, db1, dW2, db2
 
-def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
+
+def update_values(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
     W1 = W1 - alpha * dW1
-    b1 = b1 - alpha * db1    
-    W2 = W2 - alpha * dW2  
+    b1 = b1 - alpha * db1
+    W2 = W2 - alpha * dW2
     b2 = b2 - alpha * db2
     return W1, b1, W2, b2
+
 
 def get_predictions(A2):
     return np.argmax(A2, 0)
 
-def get_accuracy(predictions, Y):
+
+def accuracy(predictions, Y):
     print(predictions, Y)
     return np.sum(predictions == Y) / Y.size
 
+
 def gradient_descent(X, Y, alpha, iterations):
-    W1, b1, W2, b2 = init_params()
+    W1, b1, W2, b2 = init_values()
     for i in range(iterations):
         Z1, A1, Z2, A2 = forward_prop(W1, b1, W2, b2, X)
         dW1, db1, dW2, db2 = backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y)
-        W1, b1, W2, b2 = update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
-        if i % 10 == 0:
+        W1, b1, W2, b2 = update_values(
+            W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
+        if i % 20 == 0:
             print("Iteration: ", i)
             predictions = get_predictions(A2)
-            print(get_accuracy(predictions, Y))
+            print(accuracy(predictions, Y))
     return W1, b1, W2, b2
 
-'''running = True
-while running:
-    try:
-        W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 0.1, 500)
-        running = False
-    except:
-        running = True
-        print("It broke")'''
-W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 0.01, 300)
 
 def make_predictions(X, W1, b1, W2, b2):
     _, _, _, A2 = forward_prop(W1, b1, W2, b2, X)
     predictions = get_predictions(A2)
     return predictions
 
-def test_prediction(index, W1, b1, W2, b2):
-    current_image = X_train[:, index, None]
-    prediction = make_predictions(X_train[:, index, None], W1, b1, W2, b2)
-    label = Y_train[index]
-    if prediction == [0] :
+
+def test_prediction(index, W1, b1, W2, b2, X, Y):
+    prediction = make_predictions(X[:, index, None], W1, b1, W2, b2)
+    label = Y[index]
+    
+    if prediction == [0]:
         prediction = 'A380'
     elif prediction == [1]:
         prediction = 'AN225'
@@ -162,8 +159,8 @@ def test_prediction(index, W1, b1, W2, b2):
         prediction = 'PHLAB'
     elif prediction == [9]:
         prediction = 'SS100'
-    
-    if label == 0 :
+
+    if label == 0:
         label = 'A380'
     elif label == 1:
         label = 'AN225'
@@ -185,13 +182,26 @@ def test_prediction(index, W1, b1, W2, b2):
         label = 'SS100'
 
     print("Prediction: ", prediction)
-    print("Label: ", label)
-    
-    '''
-    current_image = current_image.reshape((100, 100)) * 255
-    plt.gray()
-    plt.imshow(current_image)
-    plt.show()
-    '''
+    print("Real: ", label)
 
-test_prediction(9 ,W1, b1, W2, b2)
+
+# layers:
+INPUT_LAYER = 100*100  # 100x100 pixels
+HIDDEN_LAYER = 90   # Hidden layer can maximally be ~99
+OUTPUT_LAYER = 10
+
+n, m, X_train, Y_train, X_valid, Y_valid = load_data('x.csv')
+W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 0.01, 300)
+
+for i in range(100-HIDDEN_LAYER):
+    test_prediction(i, W1, b1, W2, b2, X_valid, Y_valid)
+
+'''
+test_prediction(9, W1, b1, W2, b2, X_train, Y_train)
+test_prediction(5, W1, b1, W2, b2, X_train, Y_train)
+test_prediction(1, W1, b1, W2, b2, X_valid, Y_valid)
+test_prediction(2, W1, b1, W2, b2, X_valid, Y_valid)
+test_prediction(2, W1, b1, W2, b2, X_valid, Y_valid)
+test_prediction(2, W1, b1, W2, b2, X_valid, Y_valid)
+test_prediction(2, W1, b1, W2, b2, X_valid, Y_valid)
+'''
