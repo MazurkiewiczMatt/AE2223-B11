@@ -48,11 +48,13 @@ def loadimgs(save=False):
             cv2.imwrite(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\ANN\dataset\\' + i, rescaled_image)
         flat_img = rescaled_image.flatten()
         name_plane = i.split()[0] 
-        if name_plane == 'AN225':
+        if name_plane == 'A380':
+            label = 0
+        elif name_plane == 'AN225':
             label = 1
         elif name_plane == 'B747':
             label = 2
-        elif name_plane == 'B787':
+        elif name_plane == 'B737':
             label = 3
         elif name_plane == 'Beluga':
             label = 4
@@ -60,14 +62,12 @@ def loadimgs(save=False):
             label = 5
         elif name_plane == 'F16':
             label = 6
-        elif name_plane == 'A380':
-            label = 7
         elif name_plane == 'Fokker':
-            label = 8
+            label = 7
         elif name_plane == 'PHLAB':
-            label = 9
+            label = 8
         elif name_plane == 'SS100':
-            label = 10
+            label = 9
 
         images = np.vstack((images, np.array([flat_img, label])))
         if k == 0:
