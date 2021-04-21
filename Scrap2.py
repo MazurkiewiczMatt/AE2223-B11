@@ -123,7 +123,7 @@ for i in range(186):
     PSD, freq, L, phase2 = fourier(chirps, t, 1, duration)
     p2.set_ydata(phase2[L])
 
-    range_temp, _ = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+    range_temp, _, _ = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
     range_drone.append(range_temp)
     #print('range drone....', range_drone)
 

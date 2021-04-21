@@ -46,19 +46,28 @@ chirp_time = duration / no_chirps #time for one chirp
 t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
 y1 = chirps[0]  # realrx_1 from line 134 its the list 
 y2 = chirps[2]  # realrx_2
+y3 = chirps[1]  # imagrx_1
+y4 = chirps[3]  # imagrx_2
 '''for i in range(len(y1)):
     amplitude = math.sqrt((y1_im[i])2+(y1[i])2)
     phase = math.atan2(y1_im[i],y1[i])
     amp_tx_1.append(amplitude)
     phase_tx_1.append(phase)'''
 
+# yo ik upload de code naar github, ga Julien spammen en dan ga ik er vandoor
+# cool dankje! Ben je vrijdag op de c
 # Define new axis system for range and angle plot
 dt = duration / len(chirps[0])
 n = len(t)
 # Function
 PSD, freq, L, phase1 = fourier(chirps, t, 0, duration) # added phase and y is now phase data
 PSD, freq, L, phase2 = fourier(chirps, t, 2, duration) # rx_2 rea
-range_temp, freq_peaks, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+
+range_temp1, freq_peaks1, geo_angle_lst1 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+
+PSD, freq, L, phase1 = fourier(chirps, t, 1, duration) # added phase and y is now phase data
+PSD, freq, L, phase2 = fourier(chirps, t, 3, duration) # rx_2 rea
+range_temp2, freq_peaks2, geo_angle_lst2 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
 
 # ---------------------------------- PLOT DATA -----------------------------------
 # fucntion
@@ -71,8 +80,10 @@ range_temp, freq_peaks, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, pha
 # plt.ylabel('no idea')
 
 
-fig = plt.figure()
-ax1 = fig.subplots()
+#fig = plt.figure()
+#ax1 = fig.subplots(211)
+
+fig, (ax1, ax2) = plt.subplots(1,2)
 
 
 PSD, freq, L, _ = fourier(chirps, t, 2, duration)
@@ -91,14 +102,12 @@ p, = ax1.plot(freq[L], PSD[L], label='RX1_re')
 
 plt.legend()
 
-
-fig = plt.figure()
-ax2 = fig.subplots()
+#ax2 = fig.subplots(212)
 # Need to make geo_angle_lst and range_temp always have the same dimension (each timestamp). Just add the appropriate number of zeroes.
-while len(geo_angle_lst) < 20:
-    geo_angle_lst = np.append(geo_angle_lst, 0)
-    range_temp = np.append(range_temp, 0)
-p3, = ax2.plot(geo_angle_lst, range_temp, 'o', label='obstacle')
+while len(geo_angle_lst2) < 20:
+    geo_angle_lst2 = np.append(geo_angle_lst2, 0)
+    range_temp1 = np.append(range_temp1, 0)
+p3, = ax2.plot(geo_angle_lst2, range_temp1, 'o', label='obstacle')
 plt.xlim(-38, 38)
 plt.ylim(0, 10)
 '''range_fig = plt.figure()
@@ -143,23 +152,34 @@ def update(val):
     t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
     y1 = chirps[0]  # real rx1 no update basically if not here
     y2 = chirps[2]  # real rx2
+    y3 = chirps[1]  # imagrx_1
+    y4 = chirps[3]  # imagrx_2
+
     #print(t[1], y1[1], timestamp, "Still Running")
 
     dt = duration / len(chirps[0])
     n = len(t)
     # Function
     PSD, freq, L, phase1 = fourier(chirps, t, 0, duration) # added phase and y is now phase data
+    #p.set_ydata(phase1[L])
+
+    PSD, freq, L, phase2 = fourier(chirps, t, 2, duration) # rx_2 real
+    #p2.set_ydata(phase2[L]) 
+
+    range_temp1, freq_peaks1, geo_angle_lst1 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+
+    PSD, freq, L, phase1 = fourier(chirps, t, 1, duration) # added phase and y is now phase data
     p.set_ydata(phase1[L])
 
-    PSD, freq, L, phase2 = fourier(chirps, t, 2, duration) # rx_2 rea
+    PSD, freq, L, phase2 = fourier(chirps, t, 3, duration) # rx_2 real
     p2.set_ydata(phase2[L]) 
-    
-    range_temp, freq_peaks, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
-    while len(geo_angle_lst) < 20:
-        geo_angle_lst = np.append(geo_angle_lst, 0)
-        range_temp = np.append(range_temp, 0)
 
-    p3.set_ydata(range_temp)
+    range_temp2, freq_peaks2, geo_angle_lst2 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+    while len(geo_angle_lst2) < 20:
+        geo_angle_lst2 = np.append(geo_angle_lst2, 0)
+        range_temp1 = np.append(range_temp1, 0)
+
+    p3.set_ydata(range_temp1)
 
     fig.canvas.draw()
     # fig2.canvas.draw()

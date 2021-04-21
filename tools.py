@@ -6,7 +6,8 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
     
     PSD2 = PSD[L[0]:L[-1]]
     freq2 = freq[L[0]:L[-1]]
-    indices = find_peaks(PSD2)[0]
+    max_val = max(freq2)
+    indices = find_peaks(PSD2, threshold=(max_val/5))[0]
     #freq_peaks = [freq2[i] if freq2[i]<260 for i in indices]
     #phase1_peaks = [freq2[i] if phi_1[i]<260 for i in indices]
     #phase2_peaks = [freq2[i] if phi_2[i]<260 for i in indices]
@@ -21,7 +22,7 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
         phase1_peaks.append(phi_1[i])
         phase2_peaks.append(phi_2[i])
     #print('indices: ' + str(indices))
-    print('\n\nfreq_peaks: ' + str(freq_peaks))
+    #print('\n\nfreq_peaks: ' + str(freq_peaks))
 
     freq_peaks_intermediate = []
     phase1_peaks_intermediate = []
@@ -43,11 +44,12 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
     
     B = 250e6  # Hz (bandwidth range0)
     c = 2.99792458e8  # m/s
-    T = chirp_time  # not sure about the 16? 
+    T = chirp_time *16 # not sure about the 16?
+    print(T)
     #omega = abs(phi_2 - phi_1) # Phase difference [radians]
     #d = 16E-3 # m (distance between the two receivers)
     #d_test = 6.44E-3
-    d_test_2 = (sin((pi/180) * (76/2)) * 2)**-1 * 0.0125 
+    d_test_2 = (sin((pi/180) * (76/2)))**-1 * (0.0125 / 2)
     f_temp = 24E9
     range_lst = []
     geo_angle_lst = [] #test list 
@@ -56,9 +58,9 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
     for k in range(len(freq_peaks)):
         try:
             range_lst = np.append(range_lst, c * T * freq_peaks[k] / (2 * B))
-            omega = phase2_peaks[k] - phase1_peaks[k]
-            print(omega)
-            assert omega < pi, "Omega is not smaller than Pi."
+            omega = phase2_peaks[k] - phase1_peaks[k]  # difference between phases 
+            #print(omega)
+            assert abs(omega) < pi, "Omega is not smaller than Pi."
             sine = c * omega / (2 * pi * f_temp * d_test_2)
             assert (-1 <= sine <= 1), "Can't calculate asin of value outside of <-1, 1>."
             geo_angle_lst = np.append(geo_angle_lst, (180 / pi)*asin(sine))
@@ -71,9 +73,9 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
             velocity_lst = np.append(velocity_lst, 0)
 
         
-    print(str(range_lst) + ' meters')
-    print(str(geo_angle_lst) + ' degrees')
-    print(str(velocity_lst) + ' m/s')
+    #print(str(range_lst) + ' meters')
+    #print(str(geo_angle_lst) + ' degrees')
+    #print(str(velocity_lst) + ' m/s')
     # Range 10m corresponds to 261 Hz. Probably not? 
     return range_lst, freq_peaks, geo_angle_lst
 
@@ -133,7 +135,7 @@ def chirp_func(timestamp, radar_msg):
         final_val_rx1im = np.average(avg_calc_rx1im)
         final_val_rx2re = np.average(avg_calc_rx2re)
         final_val_rx2im = np.average(avg_calc_rx2im)
-
+        
         final_list[0].append(final_val_rx1re)
         final_list[1].append(final_val_rx1im)
         final_list[2].append(final_val_rx2re)
