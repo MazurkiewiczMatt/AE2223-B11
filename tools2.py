@@ -28,6 +28,7 @@ def angle_calc(PSD, L, freq, phi_1, phi_2):
     for k in range(len(freq2)):
         if PSD2[k] > 0:
             omega = phi_2[k] - phi_1[k]
+            print(omega)
             if abs(omega) > 0:
                 sine = c * omega / (2 * pi * f_temp * d_test_2)
                 geo_angle_lst = np.append(geo_angle_lst, (180 / pi)*asin(sine))
@@ -124,7 +125,8 @@ def fourier(chirps, t, realim, duration, threshold):  # from the internet
     # Function
     f_hat = np.fft.fft(chirps[realim], n)  # already zero padded according to np documentation
     PSD = np.real(f_hat * np.conj(f_hat) / n)  # Calculates the amplitude sqrt(re^2 + im^2) type of thing. Do np.real bc it returns + 0*j.
-    indices = PSD > threshold # Filter
+    threshold = max(PSD)
+    indices = PSD > 0.001*threshold / 2 # Filter
     f_hat = f_hat * indices # Cleaned signal
     PSD = PSD * indices # Cleaned signal
     phase = np.angle(f_hat) # Phase angle

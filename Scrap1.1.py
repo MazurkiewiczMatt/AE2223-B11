@@ -3,7 +3,7 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
-from tools import range_calc, fourier, chirp_func, range_calc2, angle_calc
+from tools2 import range_calc, fourier, chirp_func, range_calc2, angle_calc
 # SLIDER
 # SLIDER
 # SLIDER
@@ -67,7 +67,7 @@ PSD, freq, L, phase2 = fourier(chirps, t, 3, duration, thres_temp) # rx_2
 
 
 range_temp, geo_angle_lst = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
-range_temp2 = range_calc2(PSD, L, freq, chirp_time)
+#range_temp2, geo_angle_lst2 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
 geo_angle2 = angle_calc(PSD, L, freq, phase1, phase2)
 # ---------------------------------- PLOT DATA -----------------------------------
 # fucntion
@@ -107,17 +107,22 @@ p4, = ax2.plot(freq2[L2], PSD2[L2], label='RX2_img')
 
 ax2.legend()
 
-'''
-p5, = ax3.plot(geo_angle2, range_temp2, 'o', label='Range vs angle')
-ax3.legend()
-'''
+
+'''while len(geo_angle_lst) < 20:
+    geo_angle_lst = np.append(geo_angle_lst, 0)
+    range_temp = np.append(range_temp, 0)
+
+p5, = ax3.plot(geo_angle_lst, range_temp, 'o', label='Range vs angle')
+ax3.legend()'''
+
+
 # Need to make geo_angle_lst and range_temp always have the same dimension (each timestamp). Just add the appropriate number of zeroes.
 while len(geo_angle_lst) < 20:
     geo_angle_lst = np.append(geo_angle_lst, 0)
     range_temp = np.append(range_temp, 0)
-#p3, = ax2.plot(geo_angle_lst, range_temp, 'o', label='obstacle')
-#plt.xlim(-38, 38)
-#plt.ylim(0, 10)
+p3, = ax2.plot(geo_angle_lst, range_temp, 'o', label='obstacle')
+plt.xlim(-38, 38)
+plt.ylim(0, 10)
 
 # slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
@@ -160,12 +165,15 @@ def update(val):
 
     PSD2, freq2, L2, phase2 = fourier(chirps, t, 3, duration, thres_temp)
     p4.set_ydata(PSD2[L2])
-    '''
-    range_temp2 = range_calc2(PSD1, L1, freq1, chirp_time)
-    geo_angle2 = angle_calc(PSD1, L1, freq1, phase1, phase2)
     
-    p5.set_ydata(range_temp2)
-    '''
+    '''range_temp2, geo_angle_lst2 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+    #geo_angle2 = angle_calc(PSD1, L1, freq1, phase1, phase2)
+    while len(geo_angle_lst2) < 20:
+        geo_angle_lst2 = np.append(geo_angle_lst2, 0)
+        range_temp2 = np.append(range_temp2, 0)
+
+    p5.set_ydata(range_temp2)'''
+    
     
     '''
     PSD, freq, L, phase1 = fourier(chirps, t, 0, duration, thres_temp) # added phase and y is now phase data
@@ -181,7 +189,7 @@ def update(val):
         geo_angle_lst = np.append(geo_angle_lst, 0)
         range_temp = np.append(range_temp, 0)
 
-    #p3.set_ydata(range_temp)
+    p3.set_ydata(range_temp)
 
     fig.canvas.draw()
     # fig2.canvas.draw()

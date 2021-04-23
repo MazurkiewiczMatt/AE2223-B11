@@ -80,12 +80,19 @@ def range_calc(PSD, L, freq, chirp_time, phi_1, phi_2):
     return range_lst, freq_peaks, geo_angle_lst
 
 
-def fourier(chirps, t, realim, duration):  # from the internet
+def fourier(chirps, t, realim, duration):
     dt = duration / len(chirps[realim])  # realim rx1 0,1 rx2 = 2,3  (0, 2 real; 1, 3 imaginary)
     n = len(t)
     # Function
     f_hat = np.fft.fft(chirps[realim], n)  # already zero padded according to np documentation
     PSD = np.real(f_hat * np.conj(f_hat) / n)  # Calculates the amplitude sqrt(re^2 + im^2) type of thing. Do np.real bc it returns + 0*j.
+
+    threshold = max(PSD)
+    indices = PSD > threshold / 2 # Filter
+    f_hat = f_hat * indices # Cleaned signal
+    PSD = PSD * indices # Cleaned signal
+
+
     phase = np.angle(f_hat)
     freq = (1 / (dt * n)) * np.arange(n)  # Hz
     L = np.arange(1, np.floor(n / 2), dtype='int')  #u dont need two "mirrors"

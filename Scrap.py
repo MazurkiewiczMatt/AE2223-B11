@@ -4,22 +4,14 @@ import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 from tools import range_calc, fourier, chirp_func
-# SLIDER
-# SLIDER
-# SLIDER
-# SLIDER this has a slider
-# SLIDER
-# SLIDER
-#0
+
+
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
-events = []
-imu = []
-optitrack = []
+
 radar_time = []
 radar_msg = []
 with rosbag.Bag('1.bag') as bag:
-    #print(bag)
     for topic, msg, t in bag.read_messages(topics=['/radar/data']):
         radar_time.append(t)
         radar_msg.append(msg)
@@ -54,9 +46,7 @@ y4 = chirps[3]  # imagrx_2
     amp_tx_1.append(amplitude)
     phase_tx_1.append(phase)'''
 
-# yo ik upload de code naar github, ga Julien spammen en dan ga ik er vandoor
-# cool dankje! Ben je vrijdag op de c
-# Define new axis system for range and angle plot
+# Define new axis system for range and angle plot 
 dt = duration / len(chirps[0])
 n = len(t)
 # Function
@@ -88,13 +78,13 @@ fig, (ax1, ax2) = plt.subplots(1,2)
 
 PSD, freq, L, _ = fourier(chirps, t, 2, duration)
 #plt.yscale("log")
-plt.ylim(-10, 10)
 p2, = ax1.plot(freq[L], PSD[L], label='RX2_re')
+plt.ylim(-10, 10)
 
 PSD, freq, L, _ = fourier(chirps, t, 0, duration)
 #plt.yscale("log")
-plt.ylim(-10, 10)
 p, = ax1.plot(freq[L], PSD[L], label='RX1_re')
+plt.ylim(-10, 10)
 
 #_, freq_peaks = range_calc(PSD, L, freq, chirp_time)
 
@@ -130,18 +120,6 @@ s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=(len(radar_msg) - 2), valin
 # list of ranges
 range_drone = []
 
-#Almost heaven
-#west viginia
-#blue ridge mountains
-#shenendoha riveeer
-#life is old therE
-#older than teh trees
-# #younger than the mountains
-#blowin like a breeze
-#COUNTRY ROOOOOAAADS TAKE ME HOOOOOOOME
-#TO THE PLAAINS 
-#WHERE I BELLOOOOOOOONG
-
 # update
 def update(val):
     current_v = s_factor.val #get current value on the slider
@@ -169,10 +147,10 @@ def update(val):
     range_temp1, freq_peaks1, geo_angle_lst1 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
 
     PSD, freq, L, phase1 = fourier(chirps, t, 1, duration) # added phase and y is now phase data
-    p.set_ydata(phase1[L])
+    p.set_ydata(PSD[L])
 
     PSD, freq, L, phase2 = fourier(chirps, t, 3, duration) # rx_2 real
-    p2.set_ydata(phase2[L]) 
+    p2.set_ydata(PSD[L]) 
 
     range_temp2, freq_peaks2, geo_angle_lst2 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
     while len(geo_angle_lst2) < 20:
