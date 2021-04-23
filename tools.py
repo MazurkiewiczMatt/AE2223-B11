@@ -103,7 +103,21 @@ def chirp_func(timestamp, radar_msg):
         final_list[0].append(final_val_rx1re)
         final_list[1].append(final_val_rx1im)
         final_list[2].append(final_val_rx2re)
-        final_list[3].append(final_val_rx2im)    
-
+        final_list[3].append(final_val_rx2im)   
     chirps = np.array(final_list)
-    return chirps, no_chirps, length_chirp
+    
+    final_list = [[], [], [], []]  
+# this could be probably done neater with list comprehension, like 
+# example = [item for item in question]
+    '''for i in range(128): #Average 16 chirps to 1 chirp for one timestamp 
+        avg_calc_rx1re = np.array([])
+        avg_calc_rx1im = np.array([])
+        avg_calc_rx2re = np.array([])
+        avg_calc_rx2im = np.array([])
+        for k in range(16):
+            final_list[0].append(np.average(np.append(avg_calc_rx1re, chirps_temp[k][0][i])))
+            final_list[1].append(np.average(np.append(avg_calc_rx1im, chirps_temp[k][1][i])))
+            final_list[2].append(np.average(np.append(avg_calc_rx2re, chirps_temp[k][2][i])))
+            final_list[3].append(np.average(np.append(avg_calc_rx2im, chirps_temp[k][3][i])))   
+    chirps = np.array(final_list)'''
+    return chirps, no_chirps, length_chirp 
