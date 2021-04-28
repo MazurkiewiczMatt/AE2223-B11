@@ -1,4 +1,3 @@
-# AE2223 project
-## Group B11
+# AE2223 project, group B11
 
-FMCW radar viability for UAVs
+## FMCW radar viability for UAVs
