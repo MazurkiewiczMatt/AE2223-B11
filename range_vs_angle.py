@@ -47,9 +47,6 @@ FFT_RX_1_total_im = f_hat_1im.imaginary - f_hat_2im.real
 FFT_RX_2_total_re = f_hat_2re.real - f_hat_2im.imaginary
 FFT_RX_2_total_im = f_hat_2re.imaginary- f_hat_2im.real
 
-phase1 = np.arctan(FFT_RX_1_total_im / FFT_RX_1_total_re)
-phase2 = np.arctan(FFT_RX_2_total_im / FFT_RX_2_total_re)
-
 # Calculate the range and geometric angle
 range_temp1, freq_peaks1, geo_angle_lst1 = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
 

@@ -3,7 +3,7 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
-from tools import range_calc, fourier, chirp_func
+from tools import range_calc, fourier, chirp_func #
 
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
@@ -54,21 +54,21 @@ for i in range(186): #for entire duration of flight
     
     PSD, freq, L, phase1 = fourier(chirps, t, 0, duration) #Fourier function to obtain values
     #p.set_ydata(phase1[L]) 
-    PSD, freq, L, phase2 = fourier(chirps, t, 1, duration) #
+    PSD, freq, L, phase2 = fourier(chirps, t, 1, duration) #should be 2 i think (CHECK)
     #p2.set_ydata(phase2[L])
-    range_temp, _, _ = range_calc(PSD, L, freq, chirp_time, phase1, phase2)
+    range_temp, _, _ = range_calc(PSD, L, freq, chirp_time, phase1, phase2) #range calculation from tools file
     range_drone.append(range_temp) #append range data to range_drone list
     
-plt.show()
+plt.show() #show plots
 
-t1 = np.array([])
-y1 = np.array([])
-for i in range(len(range_drone)):
+t1 = np.array([]) #initialise list for time
+y1 = np.array([]) #initialise list for range values on y-axis
+for i in range(len(range_drone)): #function uses range_drone to organise numbers into lists that can be plotted in scatter plot
     for j in range(len(range_drone[i])):
         t1 = np.append(t1, i)
         y1 = np.append(y1, range_drone[i][j])
 
-plt.scatter(t1, y1)
+plt.scatter(t1, y1) #scatter plot function
 plt.xlabel('message number ~ time')
 plt.ylabel('range [m]')
-plt.show()
+plt.show() #shows scatter plot different from previous plt.show()
