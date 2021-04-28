@@ -92,7 +92,7 @@ def chirp_func(timestamp, radar_msg):
         final_val_rx2re = np.average(avg_calc_rx2re)
         final_val_rx2im = np.average(avg_calc_rx2im)
         
-       final_val = [final_val_rx1re, final_val_rx1im, final_val_rx2re, final_val_rx2im]
+        final_val = [final_val_rx1re, final_val_rx1im, final_val_rx2re, final_val_rx2im]
         [final_list[l].append(o) for l, o in zip(range(4), final_val)] 
     chirps = np.array(final_list)
     return chirps, no_chirps, length_chirp 
