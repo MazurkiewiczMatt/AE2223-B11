@@ -60,7 +60,7 @@ def fourier(chirps, t, realim, duration):
     phase = np.angle(f_hat)
     freq = (1 / (dt * n)) * np.arange(n)  # Hz
     L = np.arange(1, np.floor(n / 2), dtype='int')  #u dont need two "mirrors"
-    return PSD, freq, L, phase
+    return PSD, freq, L, phase, f_hat
 
 def chirp_func(timestamp, radar_msg):
     rx1_re = np.array(radar_msg[int(timestamp)].data_rx1_re)
@@ -76,13 +76,21 @@ def chirp_func(timestamp, radar_msg):
     length_chirp = radar_msg[int(timestamp)].dimy #128 
     chirps_temp = [] #intialize list 
     
-    chirps_temp = [[j[length_chirp * i:length_chirp*(i+1)] for j in y] for i in range(no_chirps)]
+    for i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and including no_chirps - 1.
+        temp_lst = []   
+        for j in y:  # Each j is one type of measurement.
+            temp_lst.append(
+                j[length_chirp * i:length_chirp * (i + 1)])  # Add data that corresponds to current chirp
+        chirps_temp.append(temp_lst)
     chirps_temp = np.array(chirps_temp)
 
     final_list = [[], [], [], []]  
-    for i in range(length_chirp): #Average 16 chirps to 1 chirp for one timestamp 
-        avg_calc_rx1re, avg_calc_rx1im, avg_calc_rx2re, avg_calc_rx2im = (np.array([]) for m in range(4))
-        for k in range(no_chirps):
+    for i in range(128): #Average 16 chirps to 1 chirp for one timestamp 
+        avg_calc_rx1re = np.array([])
+        avg_calc_rx1im = np.array([])
+        avg_calc_rx2re = np.array([])
+        avg_calc_rx2im = np.array([])
+        for k in range(16):
             avg_calc_rx1re = np.append(avg_calc_rx1re, chirps_temp[k][0][i]) 
             avg_calc_rx1im = np.append(avg_calc_rx1im, chirps_temp[k][1][i])
             avg_calc_rx2re = np.append(avg_calc_rx2re, chirps_temp[k][2][i])
@@ -92,7 +100,24 @@ def chirp_func(timestamp, radar_msg):
         final_val_rx2re = np.average(avg_calc_rx2re)
         final_val_rx2im = np.average(avg_calc_rx2im)
         
-       final_val = [final_val_rx1re, final_val_rx1im, final_val_rx2re, final_val_rx2im]
-        [final_list[l].append(o) for l, o in zip(range(4), final_val)] 
+        final_list[0].append(final_val_rx1re)
+        final_list[1].append(final_val_rx1im)
+        final_list[2].append(final_val_rx2re)
+        final_list[3].append(final_val_rx2im)   
     chirps = np.array(final_list)
+    
+    final_list = [[], [], [], []]  
+# this could be probably done neater with list comprehension, like 
+# example = [item for item in question]
+    '''for i in range(128): #Average 16 chirps to 1 chirp for one timestamp 
+        avg_calc_rx1re = np.array([])
+        avg_calc_rx1im = np.array([])
+        avg_calc_rx2re = np.array([])
+        avg_calc_rx2im = np.array([])
+        for k in range(16):
+            final_list[0].append(np.average(np.append(avg_calc_rx1re, chirps_temp[k][0][i])))
+            final_list[1].append(np.average(np.append(avg_calc_rx1im, chirps_temp[k][1][i])))
+            final_list[2].append(np.average(np.append(avg_calc_rx2re, chirps_temp[k][2][i])))
+            final_list[3].append(np.average(np.append(avg_calc_rx2im, chirps_temp[k][3][i])))   
+    chirps = np.array(final_list)'''
     return chirps, no_chirps, length_chirp 

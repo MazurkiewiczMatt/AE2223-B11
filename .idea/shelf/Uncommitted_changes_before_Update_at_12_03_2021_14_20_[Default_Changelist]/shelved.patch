@@ -1,0 +1,56 @@
+Index: Scrap.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import rosbag\r\nimport numpy as np\r\nimport math\r\nfrom matplotlib import pyplot as plt\r\n\r\n# ---------------------------- IMPORT BAG -------------------------------\r\nbag = rosbag.Bag('1.bag')\r\nprint(bag)\r\n# All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'\r\nevents = []\r\nimu = []\r\noptitrack = []\r\nradar_time = []\r\nradar_msg = []\r\nfor topic, msg, t in bag.read_messages(topics=['/radar/data']):\r\n    radar_time.append(t)\r\n    radar_msg.append(msg)\r\nbag.close()\r\nprint(radar_msg[0])\r\n# ---------------------------------- LOAD DATA --------------------------------\r\n# This is the data from a single datapoint (time interval)\r\nrx1_re = np.array(radar_msg[0].data_rx1_re)\r\nrx1_im = np.array(radar_msg[0].data_rx1_im)\r\nrx2_re = np.array(radar_msg[0].data_rx2_re)\r\nrx2_im = np.array(radar_msg[0].data_rx2_im)\r\n\r\n# The list 'chirps' is organised as follows. If the list is chirps[i][j] then i indicates the current chirp,\r\n# and j indicates the measurement type of that chirp (rx1_re or rx1_im etc.).\r\ny = [rx1_re, rx1_im, rx2_re, rx2_im]\r\nno_chirps = radar_msg[0].dimx\r\nlength_chirp = radar_msg[0].dimy\r\nchirps = []\r\nfor i in range(no_chirps):  # Each i is one chirp. i ranges from 0 up to and including no_chirps - 1.\r\n    temp_lst = []  # temporary list to organise the chirps list properly\r\n    for j in y:   # Each j is one type of measurement.\r\n        temp_lst.append(j[length_chirp*i:length_chirp*(i+1)])   # Add the data that correspond to the current chirp\r\n    chirps.append(temp_lst)\r\n\r\n# --------------------------------- PROCESS DATA --------------------------------\r\n# Another way of getting the duration would be either '12.1 / 128' or 'radar_time[1] - radar_time[0]'.\r\n# These are not the same but I don't know what the difference is.\r\n# 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.\r\nduration = int(str(radar_msg[1].ts - radar_msg[0].ts))/1e9  # seconds. Originally is type 'genpy.rostime.Duration'.\r\nchirp_time = duration / no_chirps\r\nt = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]\r\namplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)\r\n'''for i in range(len(y1)):\r\n    amplitude = math.sqrt((y1_im[i])2+(y1[i])2)\r\n    phase = math.atan2(y1_im[i],y1[i])\r\n    amp_tx_1.append(amplitude)\r\n    phase_tx_1.append(phase)'''\r\n\r\nB = 250e6   # Hz\r\nc = 2.99792458e8  # m/s\r\nT = duration\r\nfreq = 80    # Hz\r\nR = c * T * freq / (2 * B)\r\nprint(str(R) + '  meters')\r\n\r\n# ---------------------------------- PLOT DATA -----------------------------------\r\n\r\nplt.suptitle('RADAR DATA')\r\nplt.subplot(1, 2, 1)\r\nplt.plot(t, amplitude)\r\nplt.title('rx1_re (raw)')\r\nplt.xlabel('Time [s]')\r\nplt.ylabel('no idea')\r\n\r\nn_zeros = 50\r\nt = np.linspace(0, chirp_time, len(chirps[0][0]) + n_zeros)    # x-axis [seconds]\r\namplitude = np.append(amplitude, np.zeros(n_zeros))\r\ndt = duration / len(amplitude)\r\nn = len(t)\r\n\r\nf_hat = np.fft.fft(amplitude, n)\r\nPSD = f_hat * np.conj(f_hat) / n\r\nfreq = (1/(dt*n)) * np.arange(n)   # Hz\r\nL = np.arange(1, np.floor(n/2), dtype='int')\r\n\r\nplt.subplot(1, 2, 2)\r\nplt.plot(freq[L], PSD[L], 1)\r\nplt.title('rx1_re (transformed)')\r\nplt.xlabel('Frequency [Hz]')\r\nplt.ylabel('Density [no idea]')\r\nplt.show()\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Scrap.py b/Scrap.py
+--- a/Scrap.py	
++++ b/Scrap.py	
+@@ -5,7 +5,6 @@
+ 
+ # ---------------------------- IMPORT BAG -------------------------------
+ bag = rosbag.Bag('1.bag')
+-print(bag)
+ # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
+ events = []
+ imu = []
+@@ -16,7 +15,6 @@
+     radar_time.append(t)
+     radar_msg.append(msg)
+ bag.close()
+-print(radar_msg[0])
+ # ---------------------------------- LOAD DATA --------------------------------
+ # This is the data from a single datapoint (time interval)
+ rx1_re = np.array(radar_msg[0].data_rx1_re)
+@@ -40,7 +38,7 @@
+ # Another way of getting the duration would be either '12.1 / 128' or 'radar_time[1] - radar_time[0]'.
+ # These are not the same but I don't know what the difference is.
+ # 'duration' is the time of one message. 'chirp_time' is the duration of one chirp.
+-duration = int(str(radar_msg[1].ts - radar_msg[0].ts))/1e9  # seconds. Originally is type 'genpy.rostime.Duration'.
++duration = radar_msg[1].ts.secs
+ chirp_time = duration / no_chirps
+ t = np.linspace(0, chirp_time, len(chirps[0][0]))    # x-axis [seconds]
+ amplitude = np.sqrt(chirps[0][0] ** 2 + chirps[0][1] ** 2)
+@@ -66,13 +64,19 @@
+ plt.xlabel('Time [s]')
+ plt.ylabel('no idea')
+ 
+-n_zeros = 50
++n_zeros = 0
+ t = np.linspace(0, chirp_time, len(chirps[0][0]) + n_zeros)    # x-axis [seconds]
+ amplitude = np.append(amplitude, np.zeros(n_zeros))
+ dt = duration / len(amplitude)
+ n = len(t)
+ 
+ f_hat = np.fft.fft(amplitude, n)
++'''# chirps[0][0] = real, chirps[0][1] = imaginary.
++f_hat = np.array([])
++for q in range(len(chirps[0][0])):
++    f_hat = np.append(f_hat, chirps[0][0][q] + chirps[0][1][q]*1j)
++print(f_hat)
++'''
+ PSD = f_hat * np.conj(f_hat) / n
+ freq = (1/(dt*n)) * np.arange(n)   # Hz
+ L = np.arange(1, np.floor(n/2), dtype='int')
