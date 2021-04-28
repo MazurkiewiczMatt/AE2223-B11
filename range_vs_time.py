@@ -1,9 +1,8 @@
-import rosbag
+import rosbag #import Rosbag operations
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from matplotlib.widgets import Slider
-from tools import range_calc, fourier, chirp_func #
+from tools import range_angle_calc, fourier, chirp_func #file made by team containing all functions to be used
 
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'
@@ -19,7 +18,7 @@ timestamp = 0  # Each timestamp is a message. Used to see what happens over time
 # ---------------------------------- LOAD DATA --------------------------------
 # Data from a single datapoint (time interval)
 # Chirps: 1 list, in that list 16 lists, in these 4 lists (rx1re,rx1im,rx2re rx2img), in each of these 128 values.
-chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg) #from tools file, information is separated adn ordered
+chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg) #from tools file, information is separated and ordered
 
 # --------------------------------- PROCESS DATA --------------------------------
 # '12.1 / 128' or 'radar_time[1] - radar_time[0]' also gives duration (not the same)
@@ -56,7 +55,7 @@ for i in range(186): #for entire duration of flight
     #p.set_ydata(phase1[L]) 
     PSD, freq, L, phase2 = fourier(chirps, t, 1, duration) #should be 2 i think (CHECK)
     #p2.set_ydata(phase2[L])
-    range_temp, _, _ = range_calc(PSD, L, freq, chirp_time, phase1, phase2) #range calculation from tools file
+    range_temp, _, _ = range_angle_calc(PSD, L, freq, chirp_time, phase1, phase2) #range calculation from tools file
     range_drone.append(range_temp) #append range data to range_drone list
     
 plt.show() #show plots
