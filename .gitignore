@@ -1,0 +1,5 @@
+/.vscode
+
+# Add stuff that you dont want to be added to Git
+# Guide how to do it:
+# https://www.atlassian.com/git/tutorials/saving-changes/gitignore#git-ignore-patterns
