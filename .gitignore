@@ -1,4 +1,7 @@
 /.vscode
+/.idea
+/__pycache__
+/AE2223-B11
 
 # Add stuff that you dont want to be added to Git
 # Guide how to do it:
