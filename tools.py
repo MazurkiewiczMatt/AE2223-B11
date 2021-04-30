@@ -8,7 +8,7 @@ from matplotlib.widgets import Slider
 def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     B = 250e6   # Hz (bandwidth range)
     c = 2.99792458e8   # m/s
-    T = chirp_time  # total time
+    T = chirp_time # total time
     
     d_test_2 = (sin((pi/180) * (76/2)))**-1 * (0.0125 / 2)  # TODO: need update Distance between two receivers
     f_temp = 24E9  # TODO: need update
@@ -64,12 +64,18 @@ def PSD_calc(f_hat, t, duration, chirps):
     f_hat = f_hat[L]
 
     threshold = max(PSD)  # Find the highest peak
-    indices = PSD > threshold / 2  # high-pass filter based on largest signal
+    indices = PSD > 0*threshold / 5 # high-pass filter based on largest signal
     PSD = PSD * indices
 
     return PSD[PSD != 0], freq[PSD != 0], f_hat[PSD != 0]
 
-
+def check(a, b):
+    diff = len(a) - len(b)
+    if diff > 0: # a is longer than b
+        b = np.append(b, diff * [0])
+    if diff < 0:
+        a = np.append(a, -diff * [0])
+    return a, b
 
 def chirp_func(timestamp, radar_msg):
     # Average the chirps for faster computation
@@ -106,26 +112,3 @@ def chirp_func(timestamp, radar_msg):
         [final_list[l].append(o) for l, o in zip(range(4), final_val)]  # Append each value to specific list in final_list
     chirps = np.array(final_list)
     return chirps, no_chirps, length_chirp 
-'''
-def Nmaxelements(list1, N):
-    final_list = []
-  
-    for i in range(0, N): 
-        max1 = 0
-          
-        for j in range(len(list1)):     
-            if list1[j] > max1:
-                max1 = list1[j];
-                  
-        list1.remove(max1);
-        final_list.append(max1)
-    return final_list
-
-def Nmaxelements(list1, N):
-    final_list = []
-  
-    for i in range(0, N): 
-        max1 = max(list1)
-        final_list.append(max1)
-        list1.remove(max1)
-    return final_list '''

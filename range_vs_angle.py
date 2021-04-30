@@ -3,8 +3,9 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc
-
+from matplotlib import cm
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, check
 
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'; can be accessed in folder 1 as cvs files
@@ -45,6 +46,8 @@ FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
 PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps)
 PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps)
 
+FFT_RX1_combined, FFT_RX2_combined = check(FFT_RX1_combined, FFT_RX2_combined)
+
 # Calculate angle of the complex numbers.
 FFT_RX1_phase = phase_calc(FFT_RX1_combined) 
 FFT_RX2_phase = phase_calc(FFT_RX2_combined) 
@@ -54,8 +57,9 @@ range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_c
 
 fig = plt.figure()
 
-ax1 = fig.add_subplot(1,2,2, projection='polar')
-ax2 = fig.add_subplot(1,2,1)
+ax1 = fig.add_subplot(1,3,3, projection='polar')
+ax2 = fig.add_subplot(1,3,2)
+ax3 = fig.add_subplot(1,3,1)
 
 ax1.set_rorigin(0)
 ax1.set_theta_zero_location('N', offset=0)
@@ -66,10 +70,39 @@ ax1.set_rlim(0, 10)
 ax2.set_xlim(-45,45)
 ax2.set_ylim(0, 10)
 
+
+
 p2, = ax1.plot(geo_angle_lst1, range_temp1, 'o')
 p1, = ax2.plot(np.degrees(geo_angle_lst1), range_temp1, 'o')
+p3, = ax3.plot(freq_RX1, PSD_RX1)
+p4, = ax3.plot(freq_RX2, PSD_RX2)
 
-# Slcider
+'''
+# -------------- TEST -----------------
+viridis = cm.get_cmap('viridis', 256)
+newcolors = viridis(np.linspace(0, 1, 256))
+pink = np.array([248/256, 24/256, 148/256, 1])
+newcolors[:25, :] = pink
+newcmp = ListedColormap(newcolors)
+
+
+def plot_examples(cms):
+    """
+    helper function to plot two colormaps
+    """
+
+    fig, axs = plt.subplots(1, 2, figsize=(6, 3), constrained_layout=True)
+    for [ax, cmap] in zip(axs, cms):
+        psm = ax.pcolormesh(data, cmap=cmap, rasterized=True, vmin=-4, vmax=4)
+        fig.colorbar(psm, ax=ax)
+    plt.show()
+
+plot_examples([viridis, newcmp])
+
+# ----------------------------
+'''
+
+# Slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
 s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=(len(radar_msg) - 2), valinit=0, valstep=1)
 # Val max is messages in terms of index, so start from 0
@@ -94,17 +127,27 @@ def update(val):
     PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps)
     PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps)
 
+    FFT_RX1_combined, FFT_RX2_combined = check(FFT_RX1_combined, FFT_RX2_combined)
+
     # Calculate angle of the complex numbers
     FFT_RX1_phase = phase_calc(FFT_RX1_combined)
     FFT_RX2_phase = phase_calc(FFT_RX2_combined)
         
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
 
-    p2.set_xdata(geo_angle_lst1)
-    p2.set_ydata(range_temp1)  
+    range_temp1, geo_angle_lst1 = check(range_temp1, geo_angle_lst1)
 
+    p2.set_xdata(geo_angle_lst1)
+    p2.set_ydata(range_temp1)
+    
     p1.set_xdata(np.degrees(geo_angle_lst1))
     p1.set_ydata(range_temp1)
+
+    p3.set_xdata(freq_RX1)
+    p3.set_ydata(PSD_RX1)
+
+    p4.set_xdata(freq_RX2)
+    p4.set_ydata(PSD_RX2)
 
     fig.canvas.draw()
 
