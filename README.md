@@ -1,6 +1,6 @@
 # A TU Delft 2nd Year Student Project (AE 2223-I)
-## An Evaluation of Robustness of FMCW Radar Sensors on MAVs
-This repositery is dedicated to an analysis of flight data collected via a MAV with the goal of concluding whether the radar used on board of the MAV is a viable solution for the Sense and Avoid system on MAVs. For most up-to-date information on the project and this repositery, please see the group's [Overleaf file](https://www.overleaf.com/read/mjbcnttmngxn).
+## An Evaluation of Viability of FMCW Radar Sensors on MAVs
+This repository is dedicated to an analysis of flight data collected via a MAV with the goal of concluding whether the radar used on board of the MAV is a viable solution for the Sense and Avoid system on MAVs. For most up-to-date information on the project and this repositery, please see the group's [Overleaf file](https://www.overleaf.com/read/mjbcnttmngxn).
 
 ## Scripts and Files
 There are three main scripts, which are "range_vs_angle.py", "range_vs_time.py", and "tools.py".
