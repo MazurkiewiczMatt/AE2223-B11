@@ -64,7 +64,7 @@ def PSD_calc(f_hat, t, duration, chirps):
     f_hat = f_hat[L]
 
     threshold = max(PSD)  # Find the highest peak
-    indices = PSD > 0*threshold / 5 # high-pass filter based on largest signal
+    indices = PSD > threshold / 5 # high-pass filter based on largest signal
     PSD = PSD * indices
 
     return PSD[PSD != 0], freq[PSD != 0], f_hat[PSD != 0]

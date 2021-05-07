@@ -1,6 +1,7 @@
 import rosbag
 import numpy as np
 import math
+from scipy.stats import kde
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 from matplotlib import cm
@@ -63,6 +64,9 @@ ax3 = fig.add_subplot(1,3,1)
 
 ax1.set_rorigin(0)
 ax1.set_theta_zero_location('N', offset=0)
+# ----------
+ax1.set_theta_direction(-1)
+# ----------
 ax1.set_thetamin(-45)
 ax1.set_thetamax(45)
 ax1.set_rlim(0, 10)
@@ -70,37 +74,25 @@ ax1.set_rlim(0, 10)
 ax2.set_xlim(-45,45)
 ax2.set_ylim(0, 10)
 
+# ------------
+nbins=150
+x = np.degrees(geo_angle_lst1)
+y = range_temp1
+k = kde.gaussian_kde([x,y])
+xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
+zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+# ------------
 
 
 p2, = ax1.plot(geo_angle_lst1, range_temp1, 'o')
-p1, = ax2.plot(np.degrees(geo_angle_lst1), range_temp1, 'o')
+
+# ------------
+ax2.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+# -----------
+
 p3, = ax3.plot(freq_RX1, PSD_RX1)
 p4, = ax3.plot(freq_RX2, PSD_RX2)
 
-'''
-# -------------- TEST -----------------
-viridis = cm.get_cmap('viridis', 256)
-newcolors = viridis(np.linspace(0, 1, 256))
-pink = np.array([248/256, 24/256, 148/256, 1])
-newcolors[:25, :] = pink
-newcmp = ListedColormap(newcolors)
-
-
-def plot_examples(cms):
-    """
-    helper function to plot two colormaps
-    """
-
-    fig, axs = plt.subplots(1, 2, figsize=(6, 3), constrained_layout=True)
-    for [ax, cmap] in zip(axs, cms):
-        psm = ax.pcolormesh(data, cmap=cmap, rasterized=True, vmin=-4, vmax=4)
-        fig.colorbar(psm, ax=ax)
-    plt.show()
-
-plot_examples([viridis, newcmp])
-
-# ----------------------------
-'''
 
 # Slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
@@ -140,8 +132,20 @@ def update(val):
     p2.set_xdata(geo_angle_lst1)
     p2.set_ydata(range_temp1)
     
-    p1.set_xdata(np.degrees(geo_angle_lst1))
-    p1.set_ydata(range_temp1)
+    # ----------
+    x = np.degrees(geo_angle_lst1)
+    y = range_temp1
+    k = kde.gaussian_kde([x,y])
+    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
+    zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+    # ----------
+
+    # ----------
+    ax2.clear()
+    ax2.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+    ax2.set_xlim(-45,45)
+    ax2.set_ylim(0, 10)
+    # ---------
 
     p3.set_xdata(freq_RX1)
     p3.set_ydata(PSD_RX1)
