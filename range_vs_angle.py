@@ -13,11 +13,10 @@ from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, co
 
 radar_time = []
 radar_msg = []
-with rosbag.Bag('1.bag') as bag:
+with rosbag.Bag('10.bag') as bag:
     for topic, msg, t in bag.read_messages(topics=['/radar/data']):
         radar_time.append(t)
         radar_msg.append(msg)
-
 timestamp = 0  # Each timestamp has a message. Can be used to see what happens over time.
 
 # ---------------------------------- LOAD DATA --------------------------------
@@ -32,8 +31,10 @@ chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
 # --------------------------------- PROCESS DATA --------------------------------
 
 duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds
-chirp_time = duration / no_chirps 
+chirp_time = duration / no_chirps
 t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
+msg_rate = 1 / (chirp_time * no_chirps)
+sample_rate = msg_rate * len(chirps[0])
 
 f_hat_1re = fourier(chirps, t, 0, duration)  # rx_1re
 f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
@@ -44,8 +45,8 @@ f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
 FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im)
 FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
 
-PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps)
-PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps)
+PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
+PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
 
 FFT_RX1_combined, FFT_RX2_combined = check(FFT_RX1_combined, FFT_RX2_combined)
 
@@ -58,41 +59,34 @@ range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_c
 
 fig = plt.figure()
 
-ax1 = fig.add_subplot(1,3,3, projection='polar')
-ax2 = fig.add_subplot(1,3,2)
-ax3 = fig.add_subplot(1,3,1)
 
-ax1.set_rorigin(0)
-ax1.set_theta_zero_location('N', offset=0)
-# ----------
-ax1.set_theta_direction(-1)
-# ----------
-ax1.set_thetamin(-45)
-ax1.set_thetamax(45)
-ax1.set_rlim(0, 10)
+ax1 = fig.add_subplot(2,2,1)
+ax2 = fig.add_subplot(2,3,2)
+ax3 = fig.add_subplot(1,3,3, projection='polar')
 
-ax2.set_xlim(-45,45)
+ax3.set_rorigin(0)
+ax3.set_theta_zero_location('N', offset=0)
+# ----------
+ax3.set_theta_direction(-1)
+# ----------
+ax3.set_thetamin(-45)
+ax3.set_thetamax(45)
+ax3.set_rlim(0, 10)
+
+ax1.set_xlim(0,0.5)
+ax1.set_ylim(0, 2500)
+
+'''
+ax2.set_xlim()
 ax2.set_ylim(0, 10)
+'''
+p2, = ax3.plot(geo_angle_lst1, range_temp1, 'o')
 
-# ------------
-nbins=150
-x = np.degrees(geo_angle_lst1)
-y = range_temp1
-k = kde.gaussian_kde([x,y])
-xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
-zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-# ------------
+p3, = ax1.plot(freq_RX1, PSD_RX1)
+p4, = ax1.plot(freq_RX2, PSD_RX2)
 
-
-p2, = ax1.plot(geo_angle_lst1, range_temp1, 'o')
-
-# ------------
-ax2.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
-# -----------
-
-p3, = ax3.plot(freq_RX1, PSD_RX1)
-p4, = ax3.plot(freq_RX2, PSD_RX2)
-
+p5, = ax2.plot(freq_RX1, FFT_RX1_phase)
+p6, = ax2.plot(freq_RX2, FFT_RX2_phase)
 
 # Slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
@@ -116,8 +110,8 @@ def update(val):
     FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im)
     FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
 
-    PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps)
-    PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps)
+    PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
+    PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
 
     FFT_RX1_combined, FFT_RX2_combined = check(FFT_RX1_combined, FFT_RX2_combined)
 
@@ -132,26 +126,17 @@ def update(val):
     p2.set_xdata(geo_angle_lst1)
     p2.set_ydata(range_temp1)
     
-    # ----------
-    x = np.degrees(geo_angle_lst1)
-    y = range_temp1
-    k = kde.gaussian_kde([x,y])
-    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
-    zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-    # ----------
-
-    # ----------
-    ax2.clear()
-    ax2.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
-    ax2.set_xlim(-45,45)
-    ax2.set_ylim(0, 10)
-    # ---------
-
     p3.set_xdata(freq_RX1)
     p3.set_ydata(PSD_RX1)
 
     p4.set_xdata(freq_RX2)
     p4.set_ydata(PSD_RX2)
+
+    p5.set_xdata(freq_RX1)
+    p5.set_ydata(FFT_RX1_phase)
+
+    p6.set_xdata(freq_RX2)
+    p6.set_ydata(FFT_RX2_phase)
 
     fig.canvas.draw()
 
