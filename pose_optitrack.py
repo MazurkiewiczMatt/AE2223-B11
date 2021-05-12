@@ -47,27 +47,31 @@ y_orientation = data['pose.orientation.y']
 z_orientation = data['pose.orientation.z']
 w_orientation = data['pose.orientation.w']
 
-position = np.array([x_coordinates, z_coordinates, y_coordinates])
-new_position = np.empty(position.shape)
-
-for i in range(len(x_coordinates)):
-    Q = [w_orientation[i], x_orientation[i], y_orientation[i], z_orientation[i]]  # define input for function of
-    # transforming quaternion to rotation matrix
-    new_position[:, i] = quaternion_rotation_matrix(Q) @ position[:, i]
-
-new_data_dict = {'new position x': new_position[0, :], 'new position y': new_position[1, :],
-               'new position z': new_position[2, :]}  # i am really unsure about the y and z in here being like this
-# and not switched around because of the right hand and left hand coordinate systems
-data_new = pd.DataFrame(new_data_dict)
-
-x = data_new['new position x']
-y = data_new['new position y']
-z = data_new['new position z']
+# never mind all this since this is because i thought to apply the matrices when i shouldn't have haha ha ha :')
+# position = np.array([x_coordinates, z_coordinates, y_coordinates])
+# new_position = np.empty(position.shape)
+#
+# for i in range(len(x_coordinates)):
+#     Q = [w_orientation[i], x_orientation[i], y_orientation[i], z_orientation[i]]  # define input for function of
+#     # transforming quaternion to rotation matrix
+#     new_position[:, i] = quaternion_rotation_matrix(Q) @ position[:, i]
+#
+# new_data_dict = {'new position x': new_position[0, :], 'new position y': new_position[1, :],
+#                'new position z': new_position[2, :]}  # i am really unsure about the y and z in here being like this
+# # and not switched around because of the right hand and left hand coordinate systems
+# data_new = pd.DataFrame(new_data_dict)
+#
+# x = data_new['new position x']
+# y = data_new['new position y']
+# z = data_new['new position z']
 
 # basic filtering to make the line  more even:
 n = 50
 bb = [1.0 / n] * n
 aa = 1
+x = x_coordinates
+y = y_coordinates
+z = z_coordinates
 
 xfilter = lfilter(bb, aa, x)
 yfilter = lfilter(bb, aa, y)
