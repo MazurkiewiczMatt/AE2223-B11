@@ -61,8 +61,9 @@ fig = plt.figure()
 
 
 ax1 = fig.add_subplot(2,2,1)
-ax2 = fig.add_subplot(2,3,2)
-ax3 = fig.add_subplot(1,3,3, projection='polar')
+ax2 = fig.add_subplot(2,2,2)
+ax3 = fig.add_subplot(2,2,4, projection='polar')
+ax4 = fig.add_subplot(2,2,3)
 
 ax3.set_rorigin(0)
 ax3.set_theta_zero_location('N', offset=0)
@@ -87,6 +88,8 @@ p4, = ax1.plot(freq_RX2, PSD_RX2)
 
 p5, = ax2.plot(freq_RX1, FFT_RX1_phase)
 p6, = ax2.plot(freq_RX2, FFT_RX2_phase)
+
+p7, = ax4.plot(np.degrees(geo_angle_lst1), range_temp1, 'o')
 
 # Slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
@@ -137,6 +140,9 @@ def update(val):
 
     p6.set_xdata(freq_RX2)
     p6.set_ydata(FFT_RX2_phase)
+
+    p7.set_xdata(np.degrees(geo_angle_lst1))
+    p7.set_ydata(range_temp1)
 
     fig.canvas.draw()
 

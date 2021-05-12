@@ -49,7 +49,8 @@ def combined_FFT(f_hat_re, f_hat_im):
 def fourier(chirps, t, realim, duration):  # Calculate the fourier of the signal 
     dt = duration / len(chirps[realim])  # Realim rx1 0,1 rx2 = 2,3  (0, 2 real; 1, 3 imaginary)
     n = len(t)  # Total number of timestamps
-    f_hat = fftshift(np.fft.fft(chirps[realim], n))  # Frequency array already zero padded according to documentation
+    f_hat = fftshift(np.fft.fft(chirps[realim]))  # Frequency array already zero padded according to documentation
+    # add this within the fft:   , n=2*len(chirps[0])
     return f_hat
 
 def PSD_calc(f_hat, t, duration, chirps, sample_rate):
@@ -119,5 +120,5 @@ def chirp_func(timestamp, radar_msg):
         [final_list[l].append(o) for l, o in zip(range(4), final_val)]  # Append each value to specific list in final_list
     chirps = np.array(final_list)'''
     chirps = np.array([rx1_re[:length_chirp], rx1_im[:length_chirp], rx2_re[:length_chirp], rx2_im[:length_chirp]])
-    
+
     return chirps, no_chirps, length_chirp 
