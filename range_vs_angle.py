@@ -61,9 +61,24 @@ fig = plt.figure()
 
 
 ax1 = fig.add_subplot(2,2,1)
+ax1.set_ylabel('Magnitude')
+ax1.set_xlabel('Normalised frequency')
+ax1.set_title('Radar - FFT magnitude of chirp 1')
+
 ax2 = fig.add_subplot(2,2,2)
+ax2.set_ylabel('Phase [rad]')
+ax2.set_xlabel('Normalised frequency')
+ax2.set_title('Radar - FFT phase of chirp 1')
+
 ax3 = fig.add_subplot(2,2,4, projection='polar')
+ax3.set_ylabel('Range [m]')
+ax3.set_xlabel('Angle [deg]')
+ax3.set_title('Radar - range vs geometric angle (polar)')
+
 ax4 = fig.add_subplot(2,2,3)
+ax4.set_ylabel('Range [m]')
+ax4.set_xlabel('Angle [deg]')
+ax4.set_title('Radar - range vs geometric angle (cartesian)')
 
 ax3.set_rorigin(0)
 ax3.set_theta_zero_location('N', offset=0)
@@ -74,7 +89,7 @@ ax3.set_thetamin(-45)
 ax3.set_thetamax(45)
 ax3.set_rlim(0, 10)
 
-ax1.set_xlim(0,0.5)
+ax1.set_xlim(0, 0.5)
 ax1.set_ylim(0, 2500)
 
 '''

@@ -11,10 +11,17 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     c = 2.99792458e8   # m/s
     T = chirp_time # total time
     
+    # Scale the frequency to the maximum range
+    R_max = 25   # maximum range in meters
+    #R_reso = c / (2 * B)   # range resolution in meters
+    F_max = 2 * B * R_max / (c * T)
+    freq1 = freq1 * F_max / 0.5
+    freq2 = freq2 * F_max / 0.5
+
     d_test_2 = (sin((pi/180) * (76/2)))**-1 * (0.0125 / 2)  # TODO: need update Distance between two receivers
     f_temp = 24E9  # TODO: need update
-    range_lst1 = 25 * (c * T * freq1 / (2 * B) )  # Range formula for receiver 1
-    range_lst2 = 25 * (c * T * freq2 / (2 * B) )  # Range formula for receiver 2
+    range_lst1 = (c * T * freq1 / (2 * B) )  # Range formula for receiver 1
+    range_lst2 = (c * T * freq2 / (2 * B) )  # Range formula for receiver 2
 
     delta_omega = phi_1 - phi_2  # Difference between phases 
     
@@ -61,8 +68,7 @@ def PSD_calc(f_hat, t, duration, chirps, sample_rate):
     PSD = np.real(f_hat * np.conj(f_hat) / n)  # Calculates the power spectral density  (np.real returns + 0*j)
     
     freq = (1 / (dt * n)) * np.arange(n)  # Frequency calculated
-    L = np.arange(1, np.floor(n / 2), dtype='int')  # Prevent a divison of intensity over a twice long domain
-    freq = freq
+    # L = np.arange(1, np.floor(n / 2), dtype='int')  # Prevent a divison of intensity over a twice long domain    
     
     mag = np.absolute(f_hat)   # calculates the magnitude / amplitude
     PSD = mag
