@@ -73,22 +73,15 @@ def PSD_calc(f_hat, t, duration, chirps, sample_rate):
     mag = np.absolute(f_hat)   # calculates the magnitude / amplitude
     PSD = mag
 
-    # Normalise
+    # Normalise and only look at positive frequencies
     freq = fftshift(fftfreq(n, 1))[:n]
-
+    
     PSD = PSD[freq >= 0]
     f_hat = f_hat[freq >= 0]
     freq = freq[freq >= 0]
 
     return PSD, freq, f_hat
 
-def check(a, b):
-    diff = len(a) - len(b)
-    if diff > 0: # a is longer than b
-        b = np.append(b, diff * [0])
-    if diff < 0:
-        a = np.append(a, -diff * [0])
-    return a, b
 
 def chirp_func(timestamp, radar_msg):
     # Average the chirps for faster computation

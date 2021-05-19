@@ -40,8 +40,8 @@ def data_for_cylinder_along_z(center_x, center_y, radius_c, height_z):
     return x_grid, y_grid, z_grid
 
 
-data = pd.read_csv('C:/Users/ic120/PycharmProjects/AE2223-B11/1/optitrack-pose.csv')
-obstacle_data = pd.read_csv('C:/Users/ic120/PycharmProjects/AE2223-B11/trial_overview.csv')
+data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\1\optitrack-pose.csv')
+obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
 
 # input trajectory coordinates, in RHS
 x_coordinates = data['pose.position.x']
@@ -70,6 +70,7 @@ z_column = z_column.drop_duplicates()
 
 # column coordinates in single array, x-y-z for the 3 variants
 column_variants = np.stack((x_column, y_column, z_column), axis=1)
+
 Xc1, Zc1, Yc1 = column_variants[0]  # first column
 Xc2, Zc2, Yc2 = column_variants[1]  # second column
 Xc3, Zc3, Yc3 = column_variants[2]  # third column
@@ -92,9 +93,9 @@ fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 height = 2
 
-Xc, Yc, Zc = data_for_cylinder_along_z(Xc1, Yc1, radius, height)
-Xcc, Ycc, Zcc = data_for_cylinder_along_z(Xc2, Yc2, radius, height)
-Xccc, Yccc, Zccc = data_for_cylinder_along_z(Xc3, Yc3, radius, height)
+Xc, Yc, Zc = data_for_cylinder_along_z(Xc1, Yc1, radius, height)  # first column 
+Xcc, Ycc, Zcc = data_for_cylinder_along_z(Xc2, Yc2, radius, height)  # second column 
+Xccc, Yccc, Zccc = data_for_cylinder_along_z(Xc3, Yc3, radius, height)  # third column 
 
 ax.plot_surface(Xc, Yc, Zc)
 ax.plot_surface(Xcc, Ycc, Zcc)

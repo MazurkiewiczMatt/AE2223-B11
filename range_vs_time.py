@@ -2,7 +2,7 @@ import rosbag
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, check
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc
 
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'; can be accessed in folder 1 as cvs files
@@ -43,8 +43,6 @@ FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
 PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps)
 PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps)
 
-FFT_RX1_combined, FFT_RX2_combined = check(FFT_RX1_combined, FFT_RX2_combined)
-
 # Calculate angle of the complex numbers.
 FFT_RX1_phase = phase_calc(FFT_RX1_combined) 
 FFT_RX2_phase = phase_calc(FFT_RX2_combined) 
@@ -71,7 +69,6 @@ for timestamp in range(len(radar_msg)-2):
     PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps)
     PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps)
 
-    FFT_RX1_combined, FFT_RX2_combined = check(FFT_RX1_combined, FFT_RX2_combined)
 
     # Calculate angle of the complex numbers
     FFT_RX1_phase = phase_calc(FFT_RX1_combined)
@@ -79,7 +76,6 @@ for timestamp in range(len(radar_msg)-2):
         
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
 
-    range_temp1, geo_angle_lst1 = check(range_temp1, geo_angle_lst1)
     range_time.append(range_temp1)
 
 print(range_time)
