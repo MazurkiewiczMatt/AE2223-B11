@@ -6,20 +6,22 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle
 import pandas as pd
-
 
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'; can be accessed in folder 1 as cvs files
+
 #List initialisation
 radar_time = [] #radar time
 radar_msg = [] #radar message
+
 #Optitrack
 opti_x = [] #x-axis drone movement data
 opti_y = [] #y-axis drone
 opti_z = [] #z-axis drone
 opti_t = [] #Position data time stamps
+
 #Rotation data
 ori_x = [] #x-axis oreintation
 ori_y = [] #y-axis orientation
@@ -42,12 +44,15 @@ with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to anal
         ori_y.append(msg.pose.orientation.y)
         ori_z.append(msg.pose.orientation.z)
         ori_w.append(msg.pose.orientation.w)
+
 #Change lists to arrays for Numpy compatiblity
+
 #Drone Position
 opti_x = np.array(opti_x)
 opti_y = np.array(opti_y)
 opti_z = np.array(opti_z)
 opti_t = np.array(opti_t)
+
 #Drone Orientation
 ori_x = np.array(ori_x)
 ori_y = np.array(ori_y)
@@ -115,16 +120,19 @@ ax1 = fig.add_subplot(2,2,1)
 ax1.set_ylabel('Magnitude')
 ax1.set_xlabel('Normalised frequency')
 ax1.set_title('Radar - FFT magnitude of chirp 1')
+
 #Plot 2
 ax2 = fig.add_subplot(2,2,2)
 ax2.set_ylabel('Phase [rad]')
 ax2.set_xlabel('Normalised frequency')
 ax2.set_title('Radar - FFT phase of chirp 1')
+
 #Plot 3
 ax3 = fig.add_subplot(2,2,4, projection='polar')
 ax3.set_ylabel('Range [m]')
 ax3.set_xlabel('Angle [deg]')
 ax3.set_title('Radar - range vs geometric angle (polar)')
+
 #Plot 4
 ax4 = fig.add_subplot(2,2,3)
 ax4.set_ylabel('Range [m]')
@@ -178,10 +186,10 @@ for i in range(3): #3 cooridnates present
         obstacle_x *= -1
 
 # Drone 2D position data in each timestamp
-x_drone = opti_x[0] #obtain drone data with index adjustments 
+x_drone = opti_x[0] 
 y_drone = opti_y[0]
 # Drone orientation data in each timestamp
-ox_drone = ori_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
+ox_drone = ori_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)] #obtain drone data with index adjustments 
 oy_drone = ori_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 oz_drone = ori_z[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
@@ -191,23 +199,12 @@ p7, = ax4.plot(x_drone, y_drone,'o') #drone position on axis
 obstacle = plt.Circle((obstacle_x, obstacle_z), 0.2, color='r') #creates the obstacle as a circle on plot
 ax4.add_patch(obstacle) #obstacle postion added to graph
 
-# DISTANCE FUNCTION for Optitrack
-def real_distance(x_drone,y_drone,x_obst,y_obst):
-    return math.sqrt((x_drone-x_obst)**2 + (y_drone-y_obst)**2) - 0.2 
-
-# ANGLE FUNCTION from Optitrack quarterion
-def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
-    # Yaw is from optitrack
-    yaw = math.atan2(2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone, 1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)
-    heading = math.atan2(x_obst - x_drone, y_obst - y_drone) - yaw
-    return heading, yaw
-
-
+#Distance and ANgel fucntions of drone relative to obctacle(s)
 distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
 angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
 # Plot text
-txt_d = "Distance = " + "{:.3f}".format(distance_to_obstacle) + " Angle = " + "{:.3f}".format(angle_to_obstacle)
+txt_d = "Distance = " + "{:.3f}".format(distance_to_obstacle) + " Angle = " + "{:.3f}".format(np.degrees(angle_to_obstacle))
 dist_text = ax4.text(0.04, 0.9, '', transform=ax4.transAxes)
 dist_text.set_text(txt_d)
 
@@ -306,10 +303,16 @@ def update(val):
     thisy = [y_drone, y_drone + math.cos(drone_yaw)]
     line.set_data(thisx, thisy)
 
+    angle_to_obstacle_deg = np.degrees(angle_to_obstacle)
+    if angle_to_obstacle_deg > 180:
+        angle_to_obstacle_deg = 360 - angle_to_obstacle_deg
+
     # Renew text
-    txt_d = "Distance = " + "{:.2f}".format(distance_to_obstacle) + " Angle = " + "{:.2f}".format(angle_to_obstacle)
+    # Text for optitrack
+    txt_d = "Distance = " + "{:.2f}".format(distance_to_obstacle) + " Angle = " + "{:.2f}".format(angle_to_obstacle_deg)
     dist_text.set_text(txt_d)
 
+    # Text for radar
     txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(np.degrees(angle1 *-1))
     radar_txt.set_text(txt_r)
 

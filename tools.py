@@ -2,9 +2,16 @@ from scipy.signal import find_peaks
 from scipy.fftpack import fftshift, fftfreq, fft
 import numpy as np
 from math import pi, asin, sin
-from matplotlib import pyplot as plt
-from matplotlib.widgets import Slider
+import math
 
+def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
+    # Yaw is from optitrack
+    yaw = math.atan2((2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone), (1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)) #drone yaw angle
+    heading = math.atan2((x_obst - x_drone), (y_obst - y_drone)) - yaw #heading adjustment compensating for yaw
+    return heading, yaw
+
+def real_distance(x_drone,y_drone,x_obst,y_obst):
+    return math.sqrt((x_drone-x_obst)**2 + (y_drone-y_obst)**2) - 0.2 
 
 def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     B = 250e6   # Hz (bandwidth range)
@@ -15,8 +22,8 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     R_max = 25   # maximum range in meters
     #R_reso = c / (2 * B)   # range resolution in meters
     F_max = 2 * B * R_max / (c * T)
-    freq1 = freq1 * F_max / 0.5
-    freq2 = freq2 * F_max / 0.5
+    freq1 = 2 * freq1 * F_max / 0.5   # We assume we multiply by 2 since we cut the x-axis in half.
+    freq2 = 2 * freq2 * F_max / 0.5
 
     d_test_2 = (sin((pi/180) * (76/2)))**-1 * (0.0125 / 2)  # TODO: need update Distance between two receivers
     f_temp = 24E9  # TODO: need update
