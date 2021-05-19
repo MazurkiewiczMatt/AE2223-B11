@@ -21,9 +21,9 @@ opti_y = [] #y-axis drone
 opti_z = [] #z-axis drone
 opti_t = [] #Position data time stamps
 #Rotation data
-ori_x = [] #yaw
-ori_y = [] #pitch
-ori_z = [] #roll
+ori_x = [] #x-axis oreintation
+ori_y = [] #y-axis orientation
+ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
 bagnumber = 10   # minimum 1, maximum 100
@@ -178,8 +178,8 @@ for i in range(3): #3 cooridnates present
         obstacle_x *= -1
 
 # Drone 2D position data in each timestamp
-x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
-y_drone = opti_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
+x_drone = opti_x[0] #obtain drone data with index adjustments 
+y_drone = opti_y[0]
 # Drone orientation data in each timestamp
 ox_drone = ori_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 oy_drone = ori_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
@@ -189,34 +189,38 @@ ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 #Slider plot update
 p7, = ax4.plot(x_drone, y_drone,'o') #drone position on axis
 obstacle = plt.Circle((obstacle_x, obstacle_z), 0.2, color='r') #creates the obstacle as a circle on plot
+ax4.add_patch(obstacle) #obstacle postion added to graph
 
-ax4.add_patch(obstacle)
 # DISTANCE FUNCTION for Optitrack
 def real_distance(x_drone,y_drone,x_obst,y_obst):
-    return math.sqrt((x_drone-x_obst)**2 + (y_drone-y_obst)**2) - 0.2
+    return math.sqrt((x_drone-x_obst)**2 + (y_drone-y_obst)**2) - 0.2 
 
 # ANGLE FUNCTION from Optitrack quarterion
 def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
+    # Yaw is from optitrack
     yaw = math.atan2(2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone, 1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)
     heading = math.atan2(x_obst - x_drone, y_obst - y_drone) - yaw
-    return heading
+    return heading, yaw
 
 
 distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
-drone_yaw = math.atan2(2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone, 1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)
-angle_to_obstacle = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
+angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
 # Plot text
 txt_d = "Distance = " + "{:.3f}".format(distance_to_obstacle) + " Angle = " + "{:.3f}".format(angle_to_obstacle)
 dist_text = ax4.text(0.04, 0.9, '', transform=ax4.transAxes)
 dist_text.set_text(txt_d)
 
-txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(np.degrees(angle1))
+txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(np.degrees(angle1*-1))
 radar_txt = ax3.text(0.04, 0.9, '', transform=ax3.transAxes)
 radar_txt.set_text(txt_r)
 
-# Plot line between radar and obstacle
+# Plot line in witch direction the drone is pointing
+line, = ax4.plot([], [], '-', lw=1)
+thisx = [x_drone, x_drone - math.sin(drone_yaw)]
+thisy = [y_drone, y_drone + math.cos(drone_yaw)]
 
+line.set_data(thisx, thisy)
 
 # Slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
@@ -264,14 +268,17 @@ def update(val):
     range1 = range1[min_idx]
     angle1 = angle1[min_idx]
     
+    # Renew optitrack data
     x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
     y_drone = opti_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 
+    # Renew optitrack heading
     ox_drone = ori_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
     oy_drone = ori_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
     oz_drone = ori_z[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
     ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 
+    # Plot all data
     p2.set_xdata(angle1*-1)
     p2.set_ydata(range1)
 
@@ -290,15 +297,20 @@ def update(val):
     p7.set_xdata(x_drone)
     p7.set_ydata(y_drone)
 
+    # Real distance and angle to obstacle and drone orientation in optitrack coordinates
     distance_to_obstacle = real_distance(x_drone,y_drone,obstacle_x, obstacle_z)
-    drone_yaw = math.atan2(2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone, 1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)
-    angle_to_obstacle = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
+    angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
     
-    # renew text
+    # Renew heading
+    thisx = [x_drone, x_drone - math.sin(drone_yaw)]
+    thisy = [y_drone, y_drone + math.cos(drone_yaw)]
+    line.set_data(thisx, thisy)
+
+    # Renew text
     txt_d = "Distance = " + "{:.2f}".format(distance_to_obstacle) + " Angle = " + "{:.2f}".format(angle_to_obstacle)
     dist_text.set_text(txt_d)
 
-    txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(np.degrees(angle1))
+    txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(np.degrees(angle1 *-1))
     radar_txt.set_text(txt_r)
 
     
