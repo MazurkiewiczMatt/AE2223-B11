@@ -4,6 +4,22 @@ import numpy as np
 from math import pi, asin, sin
 import math
 
+def find_nearest_peak(number_of_points, fft, oldrange, oldangle):
+    # Take the strongest N peaks
+    newrange = np.array([])
+    newangle = np.array([])
+    for n in range(number_of_points):
+        index = np.argmax(np.real(np.sqrt(fft * np.conj(fft))))
+        fft[index] = 0
+        newrange = np.append(newrange, oldrange[index])
+        newangle = np.append(newangle, oldangle[index])
+
+    # Take the closest peak (smallest range)
+    min_idx = np.argmin(newrange)
+    newrange = newrange[min_idx]
+    newangle = newangle[min_idx]
+    return newrange, newangle
+
 def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
     # Yaw is from optitrack
     yaw = math.atan2((2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone), (1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)) #drone yaw angle

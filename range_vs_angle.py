@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak
 import pandas as pd
 
 # ---------------------------- IMPORT BAG -------------------------------
@@ -48,7 +48,7 @@ with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to anal
 #Change lists to arrays for Numpy compatiblity
 
 #Drone Position
-opti_x = np.array(opti_x)
+opti_x = np.array(opti_x)*-1
 opti_y = np.array(opti_y)
 opti_z = np.array(opti_z)
 opti_t = np.array(opti_t)
@@ -96,20 +96,8 @@ FFT_RX2_phase = phase_calc(FFT_RX2_combined)
 
 range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
 
-#Peak Detection
-number_of_points = 5 #Number of peaks taken 
-range1 = np.array([]) #Range for the peaks list
-angle1 = np.array([]) #Angle for the peaks list
-for n in range(number_of_points):
-    index = np.argmax(np.real(np.sqrt(FFT_RX1_combined * np.conj(FFT_RX1_combined)))) #index of highest recorded PSD
-    FFT_RX1_combined[index] = 0 #Complex values of peak unsing peak index
-    range1 = np.append(range1, range_temp1[index]) #obtain range for peak
-    angle1 = np.append(angle1, geo_angle_lst1[index]) #peak angle
-
-# Take the closest peak (smallest range)
-min_idx = np.argmin(range1) #Closest obtacle is of interest
-range1 = range1[min_idx] #range of closest obstacle
-angle1 = angle1[min_idx] #angle of closest Angle
+# Focus on only the closest object
+range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
 
 # --------------- PLOT DATA ---------------------
 
@@ -164,7 +152,7 @@ p4, = ax1.plot(freq_RX2, PSD_RX2)
 p5, = ax2.plot(freq_RX1, FFT_RX1_phase)
 p6, = ax2.plot(freq_RX2, FFT_RX2_phase)
 
-# Optitrack data
+# Optitrack obstacle data
 obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
 
 # input column coordinates (Obstacle), in RHS coordinates
@@ -250,20 +238,8 @@ def update(val):
         
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
     
-    # Take the strongest N peaks
-    number_of_points = 5
-    range1 = np.array([])
-    angle1 = np.array([])
-    for n in range(number_of_points):
-        index = np.argmax(np.real(np.sqrt(FFT_RX1_combined * np.conj(FFT_RX1_combined))))
-        FFT_RX1_combined[index] = 0
-        range1 = np.append(range1, range_temp1[index])
-        angle1 = np.append(angle1, geo_angle_lst1[index])
-
-    # Take the closest peak (smallest range)
-    min_idx = np.argmin(range1)
-    range1 = range1[min_idx]
-    angle1 = angle1[min_idx]
+    # Focus on only the closest object
+    range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
     
     # Renew optitrack data
     x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]

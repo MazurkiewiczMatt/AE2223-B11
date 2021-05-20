@@ -70,7 +70,7 @@ z_column = z_column.drop_duplicates()
 
 # column coordinates in single array, x-y-z for the 3 variants
 column_variants = np.stack((x_column, y_column, z_column), axis=1)
-
+print(column_variants)
 Xc1, Zc1, Yc1 = column_variants[0]  # first column
 Xc2, Zc2, Yc2 = column_variants[1]  # second column
 Xc3, Zc3, Yc3 = column_variants[2]  # third column
