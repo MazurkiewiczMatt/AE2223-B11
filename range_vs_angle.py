@@ -28,7 +28,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 16   # minimum 1, maximum 100
+bagnumber = 10   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -158,15 +158,15 @@ ax2.set_title('Radar - FFT phase of chirp 1')
 #ax3 = fig.add_subplot(2,2,4, projection='polar')
 ax3 = fig2.add_subplot(1,2,2, projection='polar')
 ax3.set_ylabel('Range [m]')
-ax3.set_xlabel('Angle [deg]')
-ax3.set_title('Radar - range vs geometric angle (polar)')
+ax3.set_xlabel('Angle [deg]') #maybe?
+ax3.set_title('Radar - Range vs Geometric angle (polar)')
 
 #Plot 4
 #ax4 = fig.add_subplot(2,2,3)
 ax4 = fig2.add_subplot(1,2,1)
-ax4.set_ylabel('Range [m]')
-ax4.set_xlabel('Angle [deg]')
-ax4.set_title('Radar - range vs geometric angle (cartesian)')
+ax4.set_ylabel('Y [m]')
+ax4.set_xlabel('X [m]')
+ax4.set_title('Optitrack - Top View (Cartesian)')
 
 #Plot 3 adjustments to convert to polar plot
 ax3.set_rorigin(0)

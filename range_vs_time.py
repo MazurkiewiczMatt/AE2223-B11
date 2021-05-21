@@ -21,7 +21,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 22   # minimum 1, maximum 100
+bagnumber = 16   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -191,16 +191,17 @@ for timestamp in range(len(radar_msg)-2):
 
 # - - - - - - - - - - - PLOT - - - - - - - - - - - - - - - - - -
 t1 = np.linspace(0, total_time, len(range_time))
-y1 = range_time
-y2 = optitrack_range_time
-y_radar = angle_time
-y_opti = optitrack_angle_time
+y1 = np.array(range_time)
+y2 = np.array(optitrack_range_time)
+y_radar = np.array(angle_time)
+y_opti = np.array(optitrack_angle_time)
 
 fig = plt.figure()
 fig2 = plt.figure()
 
 
 ax1 = fig.add_subplot(1,2,1)
+ax1.set_title('Bag ' + str(bagnumber))
 ax1.scatter(t1, y1, label='Radar')
 ax1.scatter(t1, y2, label='Optitrack')
 ax1.set_xlabel('time [s]')
@@ -213,6 +214,7 @@ ax1.legend()
 y_opti = np.mod(y_opti, 2*np.pi)'''
 
 ax2 = fig.add_subplot(1,2,2)
+ax2.set_title('Bag ' + str(bagnumber))
 ax2.scatter(t1, np.array(y_radar)*180/np.pi, label='Radar')
 ax2.scatter(t1, y_opti, label='Optitrack')
 ax2.set_xlabel('time [s]')
@@ -220,11 +222,32 @@ ax2.set_ylabel('angle [deg]')
 ax2.legend()
 
 # Error plots
+# First filter out the data where the obstacle is behind the drone
+y_opti = y_opti[np.abs(y_opti) < 38]
+y_radar = y_radar[:len(y_opti)]
+y1 = y1[:len(y_opti)]
+y2 = y2[:len(y_opti)]
+t1 = t1[:len(y_opti)]
+
+error_distance = np.abs(y1 - y2)
+error_angle = np.abs(y_opti - y_radar)
 '''
-
-
-ax3 = fig2.add_subplot(1,1,1)
-
+error_distance = error_distance[y2 < 90]
+error_angle = error_angle[y2 < 90]
+t1 = t1[:len(error_angle)]
 '''
+ax3 = fig2.add_subplot(1,2,1)
+ax4 = fig2.add_subplot(1,2,2)
+ax3.set_title('Error of bag ' + str(bagnumber))
+ax3.set_xlabel('Time [s]')
+ax3.set_ylabel('Distance [m]')
+ax3.plot(t1, error_distance,'o')
+
+ax4.set_title('Error of bag ' + str(bagnumber))
+ax4.set_xlabel('Time [s]')
+ax4.set_ylabel('Angle [m]')
+ax4.plot(t1, error_angle,'o')
+
+
 
 plt.show()
