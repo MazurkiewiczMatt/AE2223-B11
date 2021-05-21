@@ -4,7 +4,7 @@ import math
 from matplotlib import pyplot as plt
 from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak
 import pandas as pd
-
+from scipy.stats import norm
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'; can be accessed in folder 1 as cvs files
 #List initialisation
@@ -21,7 +21,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 16   # minimum 1, maximum 100
+bagnumber = 1   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -191,46 +191,48 @@ for timestamp in range(len(radar_msg)-2):
 
 # - - - - - - - - - - - PLOT - - - - - - - - - - - - - - - - - -
 t1 = np.linspace(0, total_time, len(range_time))
-y1 = np.array(range_time)
-y2 = np.array(optitrack_range_time)
-y_radar = np.array(angle_time)
-y_opti = np.array(optitrack_angle_time)
+range_radar = np.array(range_time) 
+range_opti = np.array(optitrack_range_time)
+angle_radar = np.array(angle_time)
+angle_opti = np.array(optitrack_angle_time)
 
 fig = plt.figure()
 fig2 = plt.figure()
-
+fig3 = plt.figure()
 
 ax1 = fig.add_subplot(1,2,1)
 ax1.set_title('Bag ' + str(bagnumber))
-ax1.scatter(t1, y1, label='Radar')
-ax1.scatter(t1, y2, label='Optitrack')
+ax1.scatter(t1, range_radar, label='Radar')
+ax1.scatter(t1, range_opti, label='Optitrack')
 ax1.set_xlabel('time [s]')
 ax1.set_ylabel('range [m]')
 ax1.legend()
 
 # found something
-#angles_2pi = np.mod(angles, 2*np.pi)
-'''y_radar = np.mod(y_radar, 2*np.pi)
-y_opti = np.mod(y_opti, 2*np.pi)'''
+#angles_2pi = np.mod(angles, 2*np.pie
+'''angle_radar = np.mod(anglw_radar, 2*np.pi)
+angle_opti = np.mod(angle_opti, 2*np.pi)'''
 
 ax2 = fig.add_subplot(1,2,2)
 ax2.set_title('Bag ' + str(bagnumber))
-ax2.scatter(t1, np.array(y_radar)*180/np.pi, label='Radar')
-ax2.scatter(t1, y_opti, label='Optitrack')
+ax2.scatter(t1, np.array(angle_radar)*180/np.pi, label='Radar')
+ax2.scatter(t1, angle_opti, label='Optitrack')
 ax2.set_xlabel('time [s]')
 ax2.set_ylabel('angle [deg]')
 ax2.legend()
 
 # Error plots
 # First filter out the data where the obstacle is behind the drone
-y_opti = y_opti[np.abs(y_opti) < 38]
-y_radar = y_radar[:len(y_opti)]
-y1 = y1[:len(y_opti)]
-y2 = y2[:len(y_opti)]
-t1 = t1[:len(y_opti)]
+angle_opti = angle_opti[np.abs(angle_opti) < 38]
+angle_radar = angle_radar[:len(angle_opti)]
+range_radar = range_radar[:len(angle_opti)]
+range_opti = range_opti[:len(angle_opti)]
+t1 = t1[:len(angle_opti)]
 
-error_distance = np.abs(y1 - y2)
-error_angle = np.abs(y_opti - y_radar)
+error_distance = np.abs(range_radar - range_opti)
+error_angle = np.abs(angle_opti - angle_radar*180/np.pi)
+
+angle_opti = np.abs(angle_opti)
 '''
 error_distance = error_distance[y2 < 90]
 error_angle = error_angle[y2 < 90]
@@ -239,15 +241,35 @@ t1 = t1[:len(error_angle)]
 ax3 = fig2.add_subplot(1,2,1)
 ax4 = fig2.add_subplot(1,2,2)
 ax3.set_title('Error of bag ' + str(bagnumber))
-ax3.set_xlabel('Time [s]')
-ax3.set_ylabel('Distance [m]')
-ax3.plot(t1, error_distance,'o')
+ax3.set_xlabel('Range [m]')
+ax3.set_ylabel('Distance error [m]')
+ax3.plot(range_opti, error_distance,'o')
 
 ax4.set_title('Error of bag ' + str(bagnumber))
-ax4.set_xlabel('Time [s]')
-ax4.set_ylabel('Angle [m]')
-ax4.plot(t1, error_angle,'o')
+ax4.set_xlabel('Angle [deg]')
+ax4.set_ylabel('Angle error [deg]')
+ax4.plot(angle_opti, error_angle,'o')
 
+
+total_data = error_distance
+
+# Normal calculations
+def normal_dist(x , mean , sd):
+    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
+    return prob_density
+
+#Calculate mean and Standard deviation.
+mean = np.mean(total_data)
+sd = np.std(total_data)
+ 
+#Apply function to the data.
+# pdf = probability density function
+pdf = normal_dist(total_data,mean,sd)
+
+x_normal = np.linspace(-3, 3, len(pdf))
+y_test = norm.pdf(total_data)
+ax3 = fig3.add_subplot(1,1,1)
+ax3.plot(total_data, y_test, 'o')
 
 
 plt.show()
