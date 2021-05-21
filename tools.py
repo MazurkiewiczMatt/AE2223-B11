@@ -23,7 +23,7 @@ def find_nearest_peak(number_of_points, fft, oldrange, oldangle):
 def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
     # Yaw is from optitrack
     yaw = math.atan2((2 * oy_drone * ow_drone - 2 * oz_drone * ox_drone), (1 - 2*oy_drone * oy_drone - 2*ox_drone * ox_drone)) #drone yaw angle
-    heading = math.atan2((x_obst - x_drone), (y_obst - y_drone)) - yaw #heading adjustment compensating for yaw
+    heading = math.atan2((x_obst - x_drone), (y_obst - y_drone)) + yaw #heading adjustment compensating for yaw
     return heading, yaw
 
 def real_distance(x_drone,y_drone,x_obst,y_obst):

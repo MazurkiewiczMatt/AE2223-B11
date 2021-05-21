@@ -28,7 +28,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 10   # minimum 1, maximum 100
+bagnumber = 16   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -58,6 +58,7 @@ ori_x = np.array(ori_x)
 ori_y = np.array(ori_y)
 ori_z = np.array(ori_z)
 ori_w = np.array(ori_w)
+
 
 timestamp = 0  # Each timestamp has a message. Is used to see what happens over time.
 # ---------------------------------- LOAD DATA --------------------------------
@@ -99,59 +100,6 @@ range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_c
 # Focus on only the closest object
 range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
 
-# --------------- PLOT DATA ---------------------
-
-fig = plt.figure() #intialise figure
-
-#Plot 1
-ax1 = fig.add_subplot(2,2,1) 
-ax1.set_ylabel('Magnitude')
-ax1.set_xlabel('Normalised frequency')
-ax1.set_title('Radar - FFT magnitude of chirp 1')
-
-#Plot 2
-ax2 = fig.add_subplot(2,2,2)
-ax2.set_ylabel('Phase [rad]')
-ax2.set_xlabel('Normalised frequency')
-ax2.set_title('Radar - FFT phase of chirp 1')
-
-#Plot 3
-ax3 = fig.add_subplot(2,2,4, projection='polar')
-ax3.set_ylabel('Range [m]')
-ax3.set_xlabel('Angle [deg]')
-ax3.set_title('Radar - range vs geometric angle (polar)')
-
-#Plot 4
-ax4 = fig.add_subplot(2,2,3)
-ax4.set_ylabel('Range [m]')
-ax4.set_xlabel('Angle [deg]')
-ax4.set_title('Radar - range vs geometric angle (cartesian)')
-
-#Plot 3 adjustments to convert to polar plot
-ax3.set_rorigin(0)
-ax3.set_theta_zero_location('N', offset=0) #Theta zero set to face north 
-ax3.set_theta_direction(-1) #Flip direction of angle 
-ax3.set_thetamin(-45) #FOV limit from drone sensors
-ax3.set_thetamax(45) #FOV limit
-ax3.set_rlim(0, 10) #Max detectable range should be 10 meters or less
-
-#Plot 1 adjustments
-#ax1.set_xlim(0, 0.5)
-ax1.set_ylim(0, 2500) #PSD values get very large in magnitude
-
-#Plot 4 adjustments
-ax4.set_ylim(-5, 5) #Area is 10 by 10 and centered around the middle
-ax4.set_xlim(-5, 5) #Area enclosed
-
-#Allow for plots to be updated by slider
-p2, = ax3.plot(angle1, range1, 'o')
-
-p3, = ax1.plot(freq_RX1, PSD_RX1)
-p4, = ax1.plot(freq_RX2, PSD_RX2)
-
-p5, = ax2.plot(freq_RX1, FFT_RX1_phase)
-p6, = ax2.plot(freq_RX2, FFT_RX2_phase)
-
 # Optitrack obstacle data
 obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
 
@@ -182,14 +130,75 @@ oy_drone = ori_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 oz_drone = ori_z[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 
+
+#Distance and ANgel fucntions of drone relative to obctacle(s)
+distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
+angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
+
+# --------------- PLOT DATA ---------------------
+
+fig = plt.figure() #intialise figure
+fig2 = plt.figure() # second frame
+
+#Plot 1
+#ax1 = fig.add_subplot(2,2,1) 
+ax1 = fig.add_subplot(1,2,1) 
+ax1.set_ylabel('Magnitude')
+ax1.set_xlabel('Normalised frequency')
+ax1.set_title('Radar - FFT magnitude of chirp 1')
+
+#Plot 2
+#ax2 = fig.add_subplot(2,2,2)
+ax2 = fig.add_subplot(1,2,2) 
+ax2.set_ylabel('Phase [rad]')
+ax2.set_xlabel('Normalised frequency')
+ax2.set_title('Radar - FFT phase of chirp 1')
+
+#Plot 3
+#ax3 = fig.add_subplot(2,2,4, projection='polar')
+ax3 = fig2.add_subplot(1,2,2, projection='polar')
+ax3.set_ylabel('Range [m]')
+ax3.set_xlabel('Angle [deg]')
+ax3.set_title('Radar - range vs geometric angle (polar)')
+
+#Plot 4
+#ax4 = fig.add_subplot(2,2,3)
+ax4 = fig2.add_subplot(1,2,1)
+ax4.set_ylabel('Range [m]')
+ax4.set_xlabel('Angle [deg]')
+ax4.set_title('Radar - range vs geometric angle (cartesian)')
+
+#Plot 3 adjustments to convert to polar plot
+ax3.set_rorigin(0)
+ax3.set_theta_zero_location('N', offset=0) #Theta zero set to face north 
+ax3.set_theta_direction(-1) #Flip direction of angle 
+ax3.set_thetamin(-45) #FOV limit from drone sensors
+ax3.set_thetamax(45) #FOV limit
+ax3.set_rlim(0, 10) #Max detectable range should be 10 meters or less
+
+#Plot 1 adjustments
+#ax1.set_xlim(0, 0.5)
+ax1.set_ylim(0, 2500) #PSD values get very large in magnitude
+
+#Plot 4 adjustments
+ax4.set_ylim(-5, 5) #Area is 10 by 10 and centered around the middle
+ax4.set_xlim(-5, 5) #Area enclosed
+
+#Allow for plots to be updated by slider
+p2, = ax3.plot(angle1, range1, 'o')
+p9, = ax3.plot(angle_to_obstacle, distance_to_obstacle, 'o', color='r')
+
+p3, = ax1.plot(freq_RX1, PSD_RX1)
+p4, = ax1.plot(freq_RX2, PSD_RX2)
+
+p5, = ax2.plot(freq_RX1, FFT_RX1_phase)
+p6, = ax2.plot(freq_RX2, FFT_RX2_phase)
+
 #Slider plot update
 p7, = ax4.plot(x_drone, y_drone,'o') #drone position on axis
 obstacle = plt.Circle((obstacle_x, obstacle_z), 0.2, color='r') #creates the obstacle as a circle on plot
 ax4.add_patch(obstacle) #obstacle postion added to graph
 
-#Distance and ANgel fucntions of drone relative to obctacle(s)
-distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
-angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
 # Plot text
 txt_d = "Distance = " + "{:.3f}".format(distance_to_obstacle) + " Angle = " + "{:.3f}".format(np.degrees(angle_to_obstacle))
@@ -251,9 +260,25 @@ def update(val):
     oz_drone = ori_z[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
     ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 
+    # Real distance and angle to obstacle and drone orientation in optitrack coordinates
+    distance_to_obstacle = real_distance(x_drone,y_drone,obstacle_x, obstacle_z)
+    angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
+    
+    # Renew heading
+    thisx = [x_drone, x_drone - math.sin(drone_yaw)]
+    thisy = [y_drone, y_drone + math.cos(drone_yaw)]
+    line.set_data(thisx, thisy)
+
+    angle_to_obstacle_deg = np.degrees(angle_to_obstacle)
+    if angle_to_obstacle_deg > 180:
+        angle_to_obstacle_deg = -360 + angle_to_obstacle_deg
+
     # Plot all data
-    p2.set_xdata(angle1*-1)
-    p2.set_ydata(range1)
+    p2.set_xdata(angle1*-1) 
+    p2.set_ydata(range1) 
+
+    p9.set_xdata(angle_to_obstacle) 
+    p9.set_ydata(distance_to_obstacle)
 
     p3.set_xdata(freq_RX1)
     p3.set_ydata(PSD_RX1)
@@ -269,19 +294,6 @@ def update(val):
 
     p7.set_xdata(x_drone)
     p7.set_ydata(y_drone)
-
-    # Real distance and angle to obstacle and drone orientation in optitrack coordinates
-    distance_to_obstacle = real_distance(x_drone,y_drone,obstacle_x, obstacle_z)
-    angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
-    
-    # Renew heading
-    thisx = [x_drone, x_drone - math.sin(drone_yaw)]
-    thisy = [y_drone, y_drone + math.cos(drone_yaw)]
-    line.set_data(thisx, thisy)
-
-    angle_to_obstacle_deg = np.degrees(angle_to_obstacle)
-    if angle_to_obstacle_deg > 180:
-        angle_to_obstacle_deg = 360 - angle_to_obstacle_deg
 
     # Renew text
     # Text for optitrack

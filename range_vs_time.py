@@ -21,7 +21,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 10   # minimum 1, maximum 100
+bagnumber = 22   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -123,10 +123,11 @@ ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
 angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
+
 thisx = [x_drone, x_drone - math.sin(drone_yaw)]
 thisy = [y_drone, y_drone + math.cos(drone_yaw)]
-# --------------- PLOT DATA ---------------------
 
+# Create lists to store values
 range_time = []
 optitrack_range_time = []
 angle_time = []
@@ -176,21 +177,28 @@ for timestamp in range(len(radar_msg)-2):
     distance_to_obstacle = real_distance(x_drone,y_drone,obstacle_x, obstacle_z)
     angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
     
+    '''if angle_to_obstacle > np.pi:
+        angle_to_obstacle = -2*np.pi + angle_to_obstacle'''
+    angle_to_obstacle_deg = np.degrees(angle_to_obstacle)
+    if angle_to_obstacle_deg > 180:
+        angle_to_obstacle_deg = -360 + angle_to_obstacle_deg
+
     # Renew heading
-    thisx = [x_drone, x_drone - math.sin(drone_yaw)]
-    thisy = [y_drone, y_drone + math.cos(drone_yaw)]
     range_time.append(range1)
     optitrack_range_time.append(distance_to_obstacle)
-    angle_time.append(angle1)
-    optitrack_angle_time.append(angle_to_obstacle)
+    angle_time.append(angle1*-1)
+    optitrack_angle_time.append(angle_to_obstacle_deg)
 
+# - - - - - - - - - - - PLOT - - - - - - - - - - - - - - - - - -
 t1 = np.linspace(0, total_time, len(range_time))
 y1 = range_time
 y2 = optitrack_range_time
-y3 = angle_time
-y4 = optitrack_angle_time
+y_radar = angle_time
+y_opti = optitrack_angle_time
 
 fig = plt.figure()
+fig2 = plt.figure()
+
 
 ax1 = fig.add_subplot(1,2,1)
 ax1.scatter(t1, y1, label='Radar')
@@ -199,11 +207,24 @@ ax1.set_xlabel('time [s]')
 ax1.set_ylabel('range [m]')
 ax1.legend()
 
+# found something
+#angles_2pi = np.mod(angles, 2*np.pi)
+'''y_radar = np.mod(y_radar, 2*np.pi)
+y_opti = np.mod(y_opti, 2*np.pi)'''
+
 ax2 = fig.add_subplot(1,2,2)
-ax2.scatter(t1, np.degrees(y3), label='Radar')
-ax2.scatter(t1, np.degrees(y4), label='Optitrack')
+ax2.scatter(t1, np.array(y_radar)*180/np.pi, label='Radar')
+ax2.scatter(t1, y_opti, label='Optitrack')
 ax2.set_xlabel('time [s]')
 ax2.set_ylabel('angle [deg]')
 ax2.legend()
+
+# Error plots
+'''
+
+
+ax3 = fig2.add_subplot(1,1,1)
+
+'''
 
 plt.show()
