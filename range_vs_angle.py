@@ -28,7 +28,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 10   # minimum 1, maximum 100
+bagnumber = 83   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -98,7 +98,7 @@ FFT_RX2_phase = phase_calc(FFT_RX2_combined)
 range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
 
 # Focus on only the closest object
-range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
+range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
 
 # Optitrack obstacle data
 obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
@@ -248,7 +248,7 @@ def update(val):
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
     
     # Focus on only the closest object
-    range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
+    range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
     
     # Renew optitrack data
     x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]

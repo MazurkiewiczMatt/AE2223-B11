@@ -21,7 +21,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 1   # minimum 1, maximum 100
+bagnumber = 70   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -87,7 +87,7 @@ FFT_RX2_phase = phase_calc(FFT_RX2_combined)
 range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
 
 # Focus on only the closest object
-range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
+range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
 
 # Optitrack data
 obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
@@ -132,9 +132,11 @@ range_time = []
 optitrack_range_time = []
 angle_time = []
 optitrack_angle_time = []
+velocity_radar_time = []
+velocity_optitrack_time = []
 counter = 0
 
-for timestamp in range(len(radar_msg)-2):
+for timestamp in range(1, len(radar_msg)-2):
     counter += 1
     print(counter)
     
@@ -161,11 +163,13 @@ for timestamp in range(len(radar_msg)-2):
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
     
     # Focus on only the closest object
-    range1, angle1 = find_nearest_peak(6, FFT_RX1_combined, range_temp1, geo_angle_lst1)
+    range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
     
     # Renew optitrack data
     x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
+    x_drone_next = opti_x[int(((timestamp + 1) * len(opti_x)/(len(radar_msg) - 2))-1)]
     y_drone = opti_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
+    y_drone_next = opti_y[int(((timestamp + 1) * len(opti_x)/(len(radar_msg) - 2))-1)]
 
     # Renew optitrack heading
     ox_drone = ori_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
@@ -174,20 +178,25 @@ for timestamp in range(len(radar_msg)-2):
     ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 
     # Real distance and angle to obstacle and drone orientation in optitrack coordinates
-    distance_to_obstacle = real_distance(x_drone,y_drone,obstacle_x, obstacle_z)
+    distance_to_obstacle = real_distance(x_drone, y_drone, obstacle_x, obstacle_z)
+    distance_to_obstacle_next = real_distance(x_drone_next, y_drone_next, obstacle_x, obstacle_z)
     angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
     
-    '''if angle_to_obstacle > np.pi:
-        angle_to_obstacle = -2*np.pi + angle_to_obstacle'''
+    # Make angle work
     angle_to_obstacle_deg = np.degrees(angle_to_obstacle)
     if angle_to_obstacle_deg > 180:
         angle_to_obstacle_deg = -360 + angle_to_obstacle_deg
+
+    # Velocity by optitrack
+    velocity_temp = (distance_to_obstacle - distance_to_obstacle_next) / duration
 
     # Renew heading
     range_time.append(range1)
     optitrack_range_time.append(distance_to_obstacle)
     angle_time.append(angle1*-1)
     optitrack_angle_time.append(angle_to_obstacle_deg)
+    velocity_radar_time.append(velocity1)
+    velocity_optitrack_time.append(velocity_temp)
 
 # - - - - - - - - - - - PLOT - - - - - - - - - - - - - - - - - -
 t1 = np.linspace(0, total_time, len(range_time))
@@ -195,12 +204,14 @@ range_radar = np.array(range_time)
 range_opti = np.array(optitrack_range_time)
 angle_radar = np.array(angle_time)
 angle_opti = np.array(optitrack_angle_time)
+velocity_radar = np.array(velocity_radar_time)
+velocity_opti = np.array(velocity_optitrack_time)
 
 fig = plt.figure()
 fig2 = plt.figure()
-fig3 = plt.figure()
+#fig3 = plt.figure()
 
-ax1 = fig.add_subplot(1,2,1)
+ax1 = fig.add_subplot(1,3,1)
 ax1.set_title('Bag ' + str(bagnumber))
 ax1.scatter(t1, range_radar, label='Radar')
 ax1.scatter(t1, range_opti, label='Optitrack')
@@ -213,46 +224,73 @@ ax1.legend()
 '''angle_radar = np.mod(anglw_radar, 2*np.pi)
 angle_opti = np.mod(angle_opti, 2*np.pi)'''
 
-ax2 = fig.add_subplot(1,2,2)
+ax2 = fig.add_subplot(1,3,2)
 ax2.set_title('Bag ' + str(bagnumber))
 ax2.scatter(t1, np.array(angle_radar)*180/np.pi, label='Radar')
 ax2.scatter(t1, angle_opti, label='Optitrack')
+ax2.axhline(38,0, t1[-1], color='k')
+ax2.axhline(-38,0, t1[-1], color='k')
 ax2.set_xlabel('time [s]')
 ax2.set_ylabel('angle [deg]')
 ax2.legend()
 
+ax3 = fig.add_subplot(1,3,3)
+ax3.set_title('Bag ' + str(bagnumber))
+ax3.scatter(t1, velocity_radar, label='Radar')
+ax3.scatter(t1, velocity_opti, label='Optitrack')
+ax3.set_xlabel('time [s]')
+ax3.set_ylabel('velocity [m/s]')
+ax3.legend()
+
 # Error plots
 # First filter out the data where the obstacle is behind the drone
-angle_opti = angle_opti[np.abs(angle_opti) < 38]
-angle_radar = angle_radar[:len(angle_opti)]
-range_radar = range_radar[:len(angle_opti)]
-range_opti = range_opti[:len(angle_opti)]
-t1 = t1[:len(angle_opti)]
+indices = abs(angle_opti) < 38
+angle_opti = angle_opti[indices]
+angle_radar = angle_radar[indices]
+range_radar = range_radar[indices]
+range_opti = range_opti[indices]
+velocity_opti = velocity_opti[indices]
+velocity_radar = velocity_radar[indices]
+t1 = t1[indices]
+
+error_distance_percent = np.abs(range_radar - range_opti) * 100 / np.abs(range_opti)
+error_angle_percent = np.abs(angle_opti - angle_radar*180/np.pi)
+error_velocity_percent = np.abs(velocity_opti - velocity_radar)
 
 error_distance = np.abs(range_radar - range_opti)
 error_angle = np.abs(angle_opti - angle_radar*180/np.pi)
-
+error_velocity = np.abs(velocity_opti - velocity_radar)
 angle_opti = np.abs(angle_opti)
+
+
 '''
 error_distance = error_distance[y2 < 90]
 error_angle = error_angle[y2 < 90]
 t1 = t1[:len(error_angle)]
 '''
-ax3 = fig2.add_subplot(1,2,1)
-ax4 = fig2.add_subplot(1,2,2)
-ax3.set_title('Error of bag ' + str(bagnumber))
-ax3.set_xlabel('Range [m]')
-ax3.set_ylabel('Distance error [m]')
-ax3.plot(range_opti, error_distance,'o')
+
+ax4 = fig2.add_subplot(1,3,1)
 
 ax4.set_title('Error of bag ' + str(bagnumber))
-ax4.set_xlabel('Angle [deg]')
-ax4.set_ylabel('Angle error [deg]')
-ax4.plot(angle_opti, error_angle,'o')
+ax4.set_xlabel('Range [m]')
+ax4.set_ylabel('Distance error [m]')
+ax4.plot(range_opti, error_distance_percent,'o')
 
+ax5 = fig2.add_subplot(1,3,2)
+ax5.set_title('Error of bag ' + str(bagnumber))
+ax5.set_xlabel('Angle [deg]')
+ax5.set_ylabel('Angle error [deg]')
+ax5.plot(angle_opti, error_angle,'o')
+
+ax6 = fig2.add_subplot(1,3,3)
+ax6.set_title('Error of bag ' + str(bagnumber))
+ax6.set_xlabel('Velocity [m/s]')
+ax6.set_ylabel('Velocity error [m/s]')
+ax6.plot(velocity_opti, error_velocity,'o')
 
 total_data = error_distance
 
+'''
 # Normal calculations
 def normal_dist(x , mean , sd):
     prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
@@ -270,6 +308,13 @@ x_normal = np.linspace(-3, 3, len(pdf))
 y_test = norm.pdf(total_data)
 ax3 = fig3.add_subplot(1,1,1)
 ax3.plot(total_data, y_test, 'o')
+'''
 
+def reject_outliers(data):
+    m = 2
+    u = np.mean(data)
+    s = np.std(data)
+    filtered = [e for e in data if (u - 2 * s < e < u + 2 * s)]
+    return filtered
 
 plt.show()

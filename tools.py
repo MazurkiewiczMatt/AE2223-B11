@@ -4,21 +4,24 @@ import numpy as np
 from math import pi, asin, sin
 import math
 
-def find_nearest_peak(number_of_points, fft, oldrange, oldangle):
+def find_nearest_peak(number_of_points, fft, oldrange, oldangle, oldvelocity):
     # Take the strongest N peaks
     newrange = np.array([])
     newangle = np.array([])
+    newvelocity = np.array([])
     for n in range(number_of_points):
         index = np.argmax(np.real(np.sqrt(fft * np.conj(fft))))
         fft[index] = 0
         newrange = np.append(newrange, oldrange[index])
         newangle = np.append(newangle, oldangle[index])
+        newvelocity = np.append(newvelocity, oldvelocity[index])
 
     # Take the closest peak (smallest range)
     min_idx = np.argmin(newrange)
     newrange = newrange[min_idx]
     newangle = newangle[min_idx]
-    return newrange, newangle
+    newvelocity = newvelocity[min_idx]
+    return newrange, newangle, newvelocity
 
 def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
     # Yaw is from optitrack
@@ -47,8 +50,9 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     range_lst2 = (c * T * freq2 / (2 * B) )  # Range formula for receiver 2
 
     delta_omega = phi_1 - phi_2  # Difference between phases 
+
     
-    # NOTE: No Errors
+
     z = -1
     for i in delta_omega: #formatting... trust us - (tamim and ilten)
         z += 1
@@ -59,7 +63,6 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     # --------
 
     temp_constant = c * delta_omega / (2 * pi * f_temp * d_test_2)  # Angle formula 
-    
     geo_angle_lst = np.arcsin(temp_constant)  # Final angle found in degrees
     velocity_lst = (c * abs(delta_omega) / (4 * pi * f_temp * T))  # Final velocity found including velocity formula
 
@@ -116,32 +119,21 @@ def chirp_func(timestamp, radar_msg):
 
     no_chirps = radar_msg[int(timestamp)].dimx  # 16 chirps
     length_chirp = radar_msg[int(timestamp)].dimy  # 128 elements in a chirp (each with rx 1 and rx 2 and Re and Im)
+    
+    # Select only the first chirp
+    rx1_re_chirp = rx1_re[:length_chirp]
+    rx1_im_chirp = rx1_im[:length_chirp]
+    rx2_re_chirp = rx2_re[:length_chirp]
+    rx2_im_chirp = rx2_im[:length_chirp]
 
-    # The list 'chirps' is organised as follows. If the list is chirps[i][j] then i indicates the current chirp,
-    # and j indicates the measurement type of that chirp (rx1_re or rx1_im etc.).
+    # Add zero-padding before assembling it into the chirps array
+    rx1_re_chirp = np.append(rx1_re_chirp, np.zeros(length_chirp))
+    rx1_im_chirp = np.append(rx1_im_chirp, np.zeros(length_chirp))
+    rx2_re_chirp = np.append(rx2_re_chirp, np.zeros(length_chirp))
+    rx2_im_chirp = np.append(rx2_im_chirp, np.zeros(length_chirp))
 
-    '''y = [rx1_re, rx1_im, rx2_re, rx2_im]  # Construct list with elemnts in order
-    chirps_temp = [[j[length_chirp * i:length_chirp * (i + 1)] for j in y] for i in range(no_chirps)]  # Chirps constructed
-    chirps_temp = np.array(chirps_temp)
-
-    final_list = [[], [], [], []]  # Average 16 chirps to 1 chirp for one timestamp 
-    for i in range(128): 
-        avg_calc_rx1re, avg_calc_rx1im, avg_calc_rx2re, avg_calc_rx2im = (np.array([]) for m in range(4))
-        for k in range(16):
-            # obtain one value from each chirp and appaned to respective list
-            avg_calc_rx1re = np.append(avg_calc_rx1re, chirps_temp[k][0][i])
-            avg_calc_rx1im = np.append(avg_calc_rx1im, chirps_temp[k][1][i])
-            avg_calc_rx2re = np.append(avg_calc_rx2re, chirps_temp[k][2][i]) 
-            avg_calc_rx2im = np.append(avg_calc_rx2im, chirps_temp[k][3][i]) 
-        final_val_rx1re = np.average(avg_calc_rx1re)
-        final_val_rx1im = np.average(avg_calc_rx1im)
-        final_val_rx2re = np.average(avg_calc_rx2re) 
-        final_val_rx2im = np.average(avg_calc_rx2im)
-        
-        final_val = [final_val_rx1re, final_val_rx1im, final_val_rx2re, final_val_rx2im]  # Remake list with only four averaged elemnets
-        [final_list[l].append(o) for l, o in zip(range(4), final_val)]  # Append each value to specific list in final_list
-    chirps = np.array(final_list)'''
-    chirps = np.array([rx1_re[:length_chirp], rx1_im[:length_chirp], rx2_re[:length_chirp], rx2_im[:length_chirp]])
+    # Assemble into one array
+    chirps = np.array([rx1_re_chirp, rx1_im_chirp, rx2_re_chirp, rx2_im_chirp])
 
     return chirps, no_chirps, length_chirp 
 
