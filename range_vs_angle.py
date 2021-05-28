@@ -28,7 +28,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 83   # minimum 1, maximum 100
+bagnumber = 15   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -68,7 +68,7 @@ Chirps: We have a list of 16 other lists, each sublist 4 subsublists (rx1re,rx1i
 in that subsublist 128 values for each. (real and complex)
 """
 
-chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
+chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
 
 # --------------------------------- PROCESS DATA --------------------------------
 
@@ -225,7 +225,7 @@ def update(val):
     current_v = s_factor.val  # Get current value on the slider
     timestamp = int(current_v)
 
-    chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
+    chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
     duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
     chirp_time = duration / no_chirps
     t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
@@ -245,7 +245,7 @@ def update(val):
     FFT_RX1_phase = phase_calc(FFT_RX1_combined)
     FFT_RX2_phase = phase_calc(FFT_RX2_combined)
         
-    range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
+    range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, 1)
     
     # Focus on only the closest object
     range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)

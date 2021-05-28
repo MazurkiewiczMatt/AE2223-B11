@@ -21,7 +21,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 70   # minimum 1, maximum 100
+bagnumber = 40   # minimum 1, maximum 100
 with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
@@ -57,7 +57,11 @@ Chirps: We have a list of 16 other lists, each sublist 4 subsublists (rx1re,rx1i
 in that subsublist 128 values for each. (real and complex)
 """
 
-chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
+chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
+chirps_for_velocity, _, _ = chirp_func(timestamp, radar_msg, 1)
+
+# Optitrack data
+obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
 
 # --------------------------------- PROCESS DATA --------------------------------
 total_time = (radar_msg[timestamp-1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9
@@ -71,26 +75,42 @@ f_hat_1re = fourier(chirps, t, 0, duration)  # rx_1re
 f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
 f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
 f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
+# Same for the other chirp used for velocity calculations
+f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
+f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
+f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
+f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
 
 # FFT of the combined (complex) signal = combination of the outputs of the FFT. Calculation is as follows:
 #Check tools.py for more details on functions 
 FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im) 
 FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
+# Same for the other chirp used for velocity calculations
+FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
+FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
+
 
 PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
 PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
+# Same for the other chirp used for velocity calculations
+PSD_RX1_vel, freq_RX1_vel, FFT_RX1_combined_vel = PSD_calc(FFT_RX1_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+PSD_RX2_vel, freq_RX2_vel, FFT_RX2_combined_vel = PSD_calc(FFT_RX2_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+
 
 # Calculate angle of the complex numbers.
 FFT_RX1_phase = phase_calc(FFT_RX1_combined) 
-FFT_RX2_phase = phase_calc(FFT_RX2_combined) 
+FFT_RX2_phase = phase_calc(FFT_RX2_combined)
+# Same for the other chirp used for velocity calculations
+FFT_RX1_phase_vel = phase_calc(FFT_RX1_combined_vel) 
+FFT_RX2_phase_vel = phase_calc(FFT_RX2_combined_vel)
 
-range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
+
+range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, phi_velocity=FFT_RX1_phase_vel)
 
 # Focus on only the closest object
 range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
 
-# Optitrack data
-obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
+# ----------------- Optitrack and Obstacle processing ---------------------------
 
 # input column coordinates (Obstacle), in RHS coordinates
 x_column_tot = obstacle_data["Obstacle x"]  # Need the full column for later
@@ -123,7 +143,6 @@ ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
 angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
-
 thisx = [x_drone, x_drone - math.sin(drone_yaw)]
 thisy = [y_drone, y_drone + math.cos(drone_yaw)]
 
@@ -138,9 +157,12 @@ counter = 0
 
 for timestamp in range(1, len(radar_msg)-2):
     counter += 1
+    if counter == 50:
+        print("\nWe are almost there!!!")
     print(counter)
     
-    chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
+    chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
+    chirps_for_velocity, _, _ = chirp_func(timestamp, radar_msg, 1)
     duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
     chirp_time = duration / no_chirps
     t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
@@ -149,18 +171,32 @@ for timestamp in range(1, len(radar_msg)-2):
     f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
     f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
     f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
-    
+    # Same for the other chirp used for velocity calculations
+    f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
+    f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
+    f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
+    f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
+
     FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im)
     FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
+    # Same for the other chirp used for velocity calculations
+    FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
+    FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
 
     PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
     PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
+    # Same for the other chirp used for velocity calculations
+    PSD_RX1_vel, freq_RX1_vel, FFT_RX1_combined_vel = PSD_calc(FFT_RX1_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+    PSD_RX2_vel, freq_RX2_vel, FFT_RX2_combined_vel = PSD_calc(FFT_RX2_combined_vel, t, duration, chirps_for_velocity, sample_rate)
 
     # Calculate angle of the complex numbers
     FFT_RX1_phase = phase_calc(FFT_RX1_combined)
     FFT_RX2_phase = phase_calc(FFT_RX2_combined)
-        
-    range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
+    # Same for the other chirp used for velocity calculations
+    FFT_RX1_phase_vel = phase_calc(FFT_RX1_combined_vel) 
+    FFT_RX2_phase_vel = phase_calc(FFT_RX2_combined_vel)
+
+    range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, phi_velocity=FFT_RX1_phase_vel)
     
     # Focus on only the closest object
     range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
@@ -207,10 +243,22 @@ angle_opti = np.array(optitrack_angle_time)
 velocity_radar = np.array(velocity_radar_time)
 velocity_opti = np.array(velocity_optitrack_time)
 
+# Filter signal after obstacle
+indices = abs(angle_opti) < 38
+angle_opti = angle_opti[indices]
+angle_radar = angle_radar[indices]
+range_radar = range_radar[indices]
+range_opti = range_opti[indices]
+velocity_opti = velocity_opti[indices]
+velocity_radar = velocity_radar[indices]
+t1 = t1[indices]
+
+# Create figures
 fig = plt.figure()
 fig2 = plt.figure()
-#fig3 = plt.figure()
 
+
+# Optitrack vs radar plots
 ax1 = fig.add_subplot(1,3,1)
 ax1.set_title('Bag ' + str(bagnumber))
 ax1.scatter(t1, range_radar, label='Radar')
@@ -218,11 +266,6 @@ ax1.scatter(t1, range_opti, label='Optitrack')
 ax1.set_xlabel('time [s]')
 ax1.set_ylabel('range [m]')
 ax1.legend()
-
-# found something
-#angles_2pi = np.mod(angles, 2*np.pie
-'''angle_radar = np.mod(anglw_radar, 2*np.pi)
-angle_opti = np.mod(angle_opti, 2*np.pi)'''
 
 ax2 = fig.add_subplot(1,3,2)
 ax2.set_title('Bag ' + str(bagnumber))
@@ -242,17 +285,7 @@ ax3.set_xlabel('time [s]')
 ax3.set_ylabel('velocity [m/s]')
 ax3.legend()
 
-# Error plots
-# First filter out the data where the obstacle is behind the drone
-indices = abs(angle_opti) < 38
-angle_opti = angle_opti[indices]
-angle_radar = angle_radar[indices]
-range_radar = range_radar[indices]
-range_opti = range_opti[indices]
-velocity_opti = velocity_opti[indices]
-velocity_radar = velocity_radar[indices]
-t1 = t1[indices]
-
+# Error calculations and plots
 error_distance_percent = np.abs(range_radar - range_opti) * 100 / np.abs(range_opti)
 error_angle_percent = np.abs(angle_opti - angle_radar*180/np.pi)
 error_velocity_percent = np.abs(velocity_opti - velocity_radar)
@@ -263,17 +296,11 @@ error_velocity = np.abs(velocity_opti - velocity_radar)
 angle_opti = np.abs(angle_opti)
 
 
-'''
-error_distance = error_distance[y2 < 90]
-error_angle = error_angle[y2 < 90]
-t1 = t1[:len(error_angle)]
-'''
-
 ax4 = fig2.add_subplot(1,3,1)
 
 ax4.set_title('Error of bag ' + str(bagnumber))
 ax4.set_xlabel('Range [m]')
-ax4.set_ylabel('Distance error [m]')
+ax4.set_ylabel('Distance error [%]')
 ax4.plot(range_opti, error_distance_percent,'o')
 
 ax5 = fig2.add_subplot(1,3,2)
@@ -287,34 +314,5 @@ ax6.set_title('Error of bag ' + str(bagnumber))
 ax6.set_xlabel('Velocity [m/s]')
 ax6.set_ylabel('Velocity error [m/s]')
 ax6.plot(velocity_opti, error_velocity,'o')
-
-total_data = error_distance
-
-'''
-# Normal calculations
-def normal_dist(x , mean , sd):
-    prob_density = (np.pi*sd) * np.exp(-0.5*((x-mean)/sd)**2)
-    return prob_density
-
-#Calculate mean and Standard deviation.
-mean = np.mean(total_data)
-sd = np.std(total_data)
- 
-#Apply function to the data.
-# pdf = probability density function
-pdf = normal_dist(total_data,mean,sd)
-
-x_normal = np.linspace(-3, 3, len(pdf))
-y_test = norm.pdf(total_data)
-ax3 = fig3.add_subplot(1,1,1)
-ax3.plot(total_data, y_test, 'o')
-'''
-
-def reject_outliers(data):
-    m = 2
-    u = np.mean(data)
-    s = np.std(data)
-    filtered = [e for e in data if (u - 2 * s < e < u + 2 * s)]
-    return filtered
 
 plt.show()

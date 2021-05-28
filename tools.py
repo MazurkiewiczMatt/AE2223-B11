@@ -4,8 +4,31 @@ import numpy as np
 from math import pi, asin, sin
 import math
 
+def reject_outliers(data, m = 2.):
+        d = np.abs(data - np.median(data))
+        mdev = np.median(d)
+        s = d/mdev if mdev else 0.
+        data_range = np.arange(len(data))
+        idx_list = data_range[s>=m]
+        return data[s<m], idx_list
+
+
 def find_nearest_peak(number_of_points, fft, oldrange, oldangle, oldvelocity):
-    # Take the strongest N peaks
+    magnitude = np.real(np.sqrt(fft * np.conj(fft)))
+    max_val = np.max(magnitude)
+    threshold = max_val / 3
+    indices = magnitude > threshold
+    newrange = oldrange[indices]
+    newangle = oldangle[indices]
+    newvelocity = oldvelocity[indices]
+    
+    # Take closest point
+    min_idx = np.argmin(newrange)
+    newrange = newrange[min_idx]
+    newangle = newangle[min_idx]
+    newvelocity = newvelocity[min_idx]
+    
+    '''# Take the strongest N peaks
     newrange = np.array([])
     newangle = np.array([])
     newvelocity = np.array([])
@@ -20,7 +43,7 @@ def find_nearest_peak(number_of_points, fft, oldrange, oldangle, oldvelocity):
     min_idx = np.argmin(newrange)
     newrange = newrange[min_idx]
     newangle = newangle[min_idx]
-    newvelocity = newvelocity[min_idx]
+    newvelocity = newvelocity[min_idx]'''
     return newrange, newangle, newvelocity
 
 def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_drone):
@@ -32,14 +55,13 @@ def real_angle(x_drone,y_drone,x_obst,y_obst, ox_drone, oy_drone, oz_drone, ow_d
 def real_distance(x_drone,y_drone,x_obst,y_obst):
     return math.sqrt((x_drone-x_obst)**2 + (y_drone-y_obst)**2) - 0.2 
 
-def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
+def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time, phi_velocity=None):
     B = 250e6   # Hz (bandwidth range)
     c = 2.99792458e8   # m/s
     T = chirp_time # total time
     
     # Scale the frequency to the maximum range
     R_max = 25   # maximum range in meters
-    #R_reso = c / (2 * B)   # range resolution in meters
     F_max = 2 * B * R_max / (c * T)
     freq1 = 2 * freq1 * F_max / 0.5   # We assume we multiply by 2 since we cut the x-axis in half.
     freq2 = 2 * freq2 * F_max / 0.5
@@ -50,8 +72,6 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
     range_lst2 = (c * T * freq2 / (2 * B) )  # Range formula for receiver 2
 
     delta_omega = phi_1 - phi_2  # Difference between phases 
-
-    
 
     z = -1
     for i in delta_omega: #formatting... trust us - (tamim and ilten)
@@ -64,7 +84,12 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time):
 
     temp_constant = c * delta_omega / (2 * pi * f_temp * d_test_2)  # Angle formula 
     geo_angle_lst = np.arcsin(temp_constant)  # Final angle found in degrees
-    velocity_lst = (c * abs(delta_omega) / (4 * pi * f_temp * T))  # Final velocity found including velocity formula
+
+    if phi_velocity is not None:
+        delta_phase_vel = phi_velocity - phi_1
+        velocity_lst = (c * abs(delta_phase_vel) / (2 * f_temp * T))  # Final velocity found including velocity formula
+    else:
+        velocity_lst = np.zeros(len(delta_omega))
 
     return range_lst1, range_lst2, geo_angle_lst, velocity_lst
 
@@ -109,7 +134,8 @@ def PSD_calc(f_hat, t, duration, chirps, sample_rate):
     return PSD, freq, f_hat
 
 
-def chirp_func(timestamp, radar_msg):
+def chirp_func(timestamp, radar_msg, chirp_no=None):
+    
     # Average the chirps for faster computation
     rx1_re = np.array(radar_msg[int(timestamp)].data_rx1_re)
     rx1_im = np.array(radar_msg[int(timestamp)].data_rx1_im)
@@ -120,11 +146,11 @@ def chirp_func(timestamp, radar_msg):
     no_chirps = radar_msg[int(timestamp)].dimx  # 16 chirps
     length_chirp = radar_msg[int(timestamp)].dimy  # 128 elements in a chirp (each with rx 1 and rx 2 and Re and Im)
     
-    # Select only the first chirp
-    rx1_re_chirp = rx1_re[:length_chirp]
-    rx1_im_chirp = rx1_im[:length_chirp]
-    rx2_re_chirp = rx2_re[:length_chirp]
-    rx2_im_chirp = rx2_im[:length_chirp]
+    # Select only one chirp. Chirp_no indicates which chirp we want.
+    rx1_re_chirp = rx1_re[chirp_no*length_chirp:(chirp_no + 1)*length_chirp]
+    rx1_im_chirp = rx1_im[chirp_no*length_chirp:(chirp_no + 1)*length_chirp]
+    rx2_re_chirp = rx2_re[chirp_no*length_chirp:(chirp_no + 1)*length_chirp]
+    rx2_im_chirp = rx2_im[chirp_no*length_chirp:(chirp_no + 1)*length_chirp]
 
     # Add zero-padding before assembling it into the chirps array
     rx1_re_chirp = np.append(rx1_re_chirp, np.zeros(length_chirp))

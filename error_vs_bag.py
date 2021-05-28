@@ -2,13 +2,14 @@ import rosbag
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, reject_outliers
 import pandas as pd
 from scipy.stats import norm
 
 error_list_distance = []
 error_list_angle = []
 error_list_velocity = []
+
 for bagnumber in range(1, 101):
     print(bagnumber)
     # ---------------------------- IMPORT BAG -------------------------------
@@ -63,7 +64,8 @@ for bagnumber in range(1, 101):
     in that subsublist 128 values for each. (real and complex)
     """
 
-    chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
+    chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
+    chirps_for_velocity, _, _ = chirp_func(timestamp, radar_msg, 1)
 
     # --------------------------------- PROCESS DATA --------------------------------
     total_time = (radar_msg[timestamp-1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9
@@ -77,20 +79,34 @@ for bagnumber in range(1, 101):
     f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
     f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
     f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
+    # Same for the other chirp used for velocity calculations
+    f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
+    f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
+    f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
+    f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
 
     # FFT of the combined (complex) signal = combination of the outputs of the FFT. Calculation is as follows:
     #Check tools.py for more details on functions 
     FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im) 
     FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
+    # Same for the other chirp used for velocity calculations
+    FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
+    FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
 
     PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
     PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
+    # Same for the other chirp used for velocity calculations
+    PSD_RX1_vel, freq_RX1_vel, FFT_RX1_combined_vel = PSD_calc(FFT_RX1_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+    PSD_RX2_vel, freq_RX2_vel, FFT_RX2_combined_vel = PSD_calc(FFT_RX2_combined_vel, t, duration, chirps_for_velocity, sample_rate)
 
     # Calculate angle of the complex numbers.
     FFT_RX1_phase = phase_calc(FFT_RX1_combined) 
     FFT_RX2_phase = phase_calc(FFT_RX2_combined) 
+    # Same for the other chirp used for velocity calculations
+    FFT_RX1_phase_vel = phase_calc(FFT_RX1_combined_vel) 
+    FFT_RX2_phase_vel = phase_calc(FFT_RX2_combined_vel)
 
-    range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
+    range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, phi_velocity=FFT_RX1_phase_vel)
 
     # Focus on only the closest object
     range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
@@ -144,7 +160,9 @@ for bagnumber in range(1, 101):
 
     for timestamp in range(1, len(radar_msg)-2):
         
-        chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg)
+        chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
+        chirps_for_velocity, _, _ = chirp_func(timestamp, radar_msg, 1)
+
         duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
         chirp_time = duration / no_chirps
         t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
@@ -153,18 +171,32 @@ for bagnumber in range(1, 101):
         f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
         f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
         f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
-        
+        # Same for the other chirp used for velocity calculations
+        f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
+        f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
+        f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
+        f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
+
         FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im)
         FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
+        # Same for the other chirp used for velocity calculations
+        FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
+        FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
 
         PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
         PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
+        # Same for the other chirp used for velocity calculations
+        PSD_RX1_vel, freq_RX1_vel, FFT_RX1_combined_vel = PSD_calc(FFT_RX1_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+        PSD_RX2_vel, freq_RX2_vel, FFT_RX2_combined_vel = PSD_calc(FFT_RX2_combined_vel, t, duration, chirps_for_velocity, sample_rate)
 
         # Calculate angle of the complex numbers
         FFT_RX1_phase = phase_calc(FFT_RX1_combined)
         FFT_RX2_phase = phase_calc(FFT_RX2_combined)
-            
-        range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
+        # Same for the other chirp used for velocity calculations
+        FFT_RX1_phase_vel = phase_calc(FFT_RX1_combined_vel) 
+        FFT_RX2_phase_vel = phase_calc(FFT_RX2_combined_vel)
+
+        range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, phi_velocity=FFT_RX1_phase_vel)
         
         # Focus on only the closest object
         range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
@@ -212,7 +244,6 @@ for bagnumber in range(1, 101):
     velocity_opti = np.array(velocity_optitrack_time)
 
 
-
     # Error plots
     # First filter out the data where the obstacle is behind the drone
     indices = abs(angle_opti) < 38
@@ -222,18 +253,7 @@ for bagnumber in range(1, 101):
     range_opti = range_opti[indices]
     velocity_opti = velocity_opti[indices]
     velocity_radar = velocity_radar[indices]
-    '''
-    try:
-        error_distance_percent = np.abs(range_radar - range_opti) * 100 / np.abs(range_opti)
-        error_angle_percent = np.abs(angle_opti - angle_radar*180/np.pi) * 100 / np.abs(angle_opti)
-        error_velocity_percent = np.abs(velocity_opti - velocity_radar) * 100 / np.abs(velocity_opti)
-    except Exception as e:
-        print("Exception ecountered: " + str(e))
-        error_distance_percent = 0
-        error_angle_percent = 0
-        error_velocity_percent = 0
-        print("The values changed to 0")
-    '''
+    
     try:
         error_distance_percent = np.abs(range_radar - range_opti) * 100 / np.abs(range_opti)
         error_angle_percent = np.abs(angle_opti - angle_radar*180/np.pi)
@@ -255,11 +275,38 @@ for bagnumber in range(1, 101):
     error_list_velocity.append(error_velocity_tot)
 
 
-error_distance_plot_values = error_list_distance
-error_angle_plot_values = error_list_angle
-error_velocity_plot_values = error_list_velocity
-
+error_distance_plot_values = np.array(error_list_distance)
+error_angle_plot_values = np.array(error_list_angle)
+error_velocity_plot_values = np.array(error_list_velocity)
 x_bags = np.arange(1, 101, 1)
+
+
+# Remove outliers
+error_distance_plot_values, idx_outliers = reject_outliers(error_distance_plot_values)
+x_bags = np.delete(x_bags, idx_outliers)
+error_angle_plot_values = np.delete(error_list_angle, idx_outliers)
+error_velocity_plot_values = np.delete(error_list_velocity, idx_outliers)
+
+
+# Find mean, median and interquartile range for the errors
+#error_distance_plot_values
+#error_angle_plot_values
+#error_velocity_plot_values
+
+print("MEAN:")
+print("Distance error: " + "{:.4f}".format(np.mean(error_distance_plot_values)) + " %")
+print("Angle error: " + "{:.4f}".format(np.mean(error_angle_plot_values)) + " deg")
+print("Velocity error: " + "{:.4f}".format(np.mean(error_velocity_plot_values)) + " m/s")
+
+print("MEDIAN:")
+print("Distance error: " + "{:.4f}".format(np.median(error_distance_plot_values)) + " %")
+print("Angle error: " + "{:.4f}".format(np.median(error_angle_plot_values)) + " deg")
+print("Velocity error: " + "{:.4f}".format(np.median(error_velocity_plot_values)) + " m/s")
+
+print("IQR:")
+print("Distance error: " + "{:.4f}".format(np.percentile(error_distance_plot_values, 25)) + "-" + "{:.4f}".format(np.percentile(error_distance_plot_values, 75)) + " %")
+print("Angle error: " + "{:.4f}".format(np.percentile(error_angle_plot_values, 25)) + "-" + "{:.4f}".format(np.percentile(error_angle_plot_values, 75)) + " deg")
+print("Velocity error: " + "{:.4f}".format(np.percentile(error_velocity_plot_values, 25)) + "-" + "{:.4f}".format(np.percentile(error_velocity_plot_values, 75)) + " m/s")
 
 
 fig = plt.figure()
@@ -268,7 +315,7 @@ ax1 = fig.add_subplot(1,3,1)
 ax1.set_title('Distance error all bags')
 ax1.scatter(x_bags,error_distance_plot_values)
 ax1.set_xlabel('Bag number')
-ax1.set_ylabel('Range error [m]')
+ax1.set_ylabel('Range error [%]')
 
 
 ax2 = fig.add_subplot(1,3,2)
