@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
 from matplotlib import cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, get_file, get_folder_file
 import pandas as pd
 
 # ---------------------------- IMPORT BAG -------------------------------
@@ -23,13 +23,14 @@ opti_z = [] #z-axis drone
 opti_t = [] #Position data time stamps
 
 #Rotation data
-ori_x = [] #x-axis oreintation
+ori_x = [] #x-axis orientation
 ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
 bagnumber = 15   # minimum 1, maximum 100
-with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
+directory = get_folder_file('Bags', str(bagnumber) + '.bag')
+with rosbag.Bag(directory) as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
         radar_msg.append(msg) #radar data
@@ -70,8 +71,11 @@ in that subsublist 128 values for each. (real and complex)
 
 chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
 
-# --------------------------------- PROCESS DATA --------------------------------
+# Optitrack obstacle data
+directory = get_folder_file('Bags', 'trial_overview.csv')
+obstacle_data = pd.read_csv(directory)
 
+# --------------------------------- PROCESS DATA --------------------------------
 duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  #Total time in seconds
 chirp_time = duration / no_chirps #Time for 1 chirp (16 chirps total)
 t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
@@ -95,13 +99,13 @@ PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, ch
 FFT_RX1_phase = phase_calc(FFT_RX1_combined) 
 FFT_RX2_phase = phase_calc(FFT_RX2_combined) 
 
+# Calculate range, geometrical angle and velocity
 range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time)
 
 # Focus on only the closest object
-range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
+range1, angle1, velocity1 = find_nearest_peak(FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
 
-# Optitrack obstacle data
-obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
+# ----------------- Optitrack and Obstacle processing ---------------------------
 
 # input column coordinates (Obstacle), in RHS coordinates
 x_column_tot = obstacle_data["Obstacle x"]  # Need the full column for later
@@ -130,8 +134,7 @@ oy_drone = ori_y[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 oz_drone = ori_z[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 ow_drone = ori_w[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
 
-
-#Distance and ANgel fucntions of drone relative to obctacle(s)
+#Distance and angel fucntions of drone relative to obctacle(s)
 distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
 angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
@@ -141,28 +144,24 @@ fig = plt.figure() #intialise figure
 fig2 = plt.figure() # second frame
 
 #Plot 1
-#ax1 = fig.add_subplot(2,2,1) 
 ax1 = fig.add_subplot(1,2,1) 
 ax1.set_ylabel('Magnitude')
 ax1.set_xlabel('Normalised frequency')
 ax1.set_title('Radar - FFT magnitude of chirp 1')
 
 #Plot 2
-#ax2 = fig.add_subplot(2,2,2)
 ax2 = fig.add_subplot(1,2,2) 
 ax2.set_ylabel('Phase [rad]')
 ax2.set_xlabel('Normalised frequency')
 ax2.set_title('Radar - FFT phase of chirp 1')
 
 #Plot 3
-#ax3 = fig.add_subplot(2,2,4, projection='polar')
 ax3 = fig2.add_subplot(1,2,2, projection='polar')
 ax3.set_ylabel('Range [m]')
 ax3.set_xlabel('Angle [deg]') #maybe?
 ax3.set_title('Radar - Range vs Geometric angle (polar)')
 
 #Plot 4
-#ax4 = fig.add_subplot(2,2,3)
 ax4 = fig2.add_subplot(1,2,1)
 ax4.set_ylabel('Y [m]')
 ax4.set_xlabel('X [m]')
@@ -177,7 +176,6 @@ ax3.set_thetamax(45) #FOV limit
 ax3.set_rlim(0, 10) #Max detectable range should be 10 meters or less
 
 #Plot 1 adjustments
-#ax1.set_xlim(0, 0.5)
 ax1.set_ylim(0, 2500) #PSD values get very large in magnitude
 
 #Plot 4 adjustments
@@ -209,7 +207,7 @@ txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(
 radar_txt = ax3.text(0.04, 0.9, '', transform=ax3.transAxes)
 radar_txt.set_text(txt_r)
 
-# Plot line in witch direction the drone is pointing
+# Plot line in wich direction the drone is pointing
 line, = ax4.plot([], [], '-', lw=1)
 thisx = [x_drone, x_drone - math.sin(drone_yaw)]
 thisy = [y_drone, y_drone + math.cos(drone_yaw)]
@@ -248,7 +246,7 @@ def update(val):
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, 1)
     
     # Focus on only the closest object
-    range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
+    range1, angle1, velocity1 = find_nearest_peak(FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
     
     # Renew optitrack data
     x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]

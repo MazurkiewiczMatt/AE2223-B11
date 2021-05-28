@@ -2,7 +2,8 @@ import rosbag
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, \
+    real_angle, find_nearest_peak, get_file, get_folder_file, reject_outliers
 import pandas as pd
 from scipy.stats import norm
 # ---------------------------- IMPORT BAG -------------------------------
@@ -16,13 +17,14 @@ opti_y = [] #y-axis drone
 opti_z = [] #z-axis drone
 opti_t = [] #Position data time stamps
 #Rotation data
-ori_x = [] #x-axis oreintation
+ori_x = [] #x-axis orientation
 ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 40   # minimum 1, maximum 100
-with rosbag.Bag(str(bagnumber) + '.bag') as bag: #Open the specific file to analyse 
+bagnumber = 70   # minimum 1, maximum 100
+directory = get_folder_file('Bags', str(bagnumber) + '.bag')
+with rosbag.Bag(directory) as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
         radar_time.append(t) #time data
         radar_msg.append(msg) #radar data
@@ -61,7 +63,8 @@ chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
 chirps_for_velocity, _, _ = chirp_func(timestamp, radar_msg, 1)
 
 # Optitrack data
-obstacle_data = pd.read_csv(r'C:\Users\frank\Documents\TU Delft\Year 2\Q3\Project\Github\trial_overview.csv')
+directory = get_folder_file('Bags', 'trial_overview.csv')
+obstacle_data = pd.read_csv(directory)
 
 # --------------------------------- PROCESS DATA --------------------------------
 total_time = (radar_msg[timestamp-1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9
@@ -75,46 +78,45 @@ f_hat_1re = fourier(chirps, t, 0, duration)  # rx_1re
 f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
 f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
 f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
-# Same for the other chirp used for velocity calculations
-f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
-f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
-f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
-f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
 
 # FFT of the combined (complex) signal = combination of the outputs of the FFT. Calculation is as follows:
 #Check tools.py for more details on functions 
 FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im) 
 FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
-# Same for the other chirp used for velocity calculations
-FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
-FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
-
 
 PSD_RX1, freq_RX1, FFT_RX1_combined = PSD_calc(FFT_RX1_combined, t, duration, chirps, sample_rate)
 PSD_RX2, freq_RX2, FFT_RX2_combined = PSD_calc(FFT_RX2_combined, t, duration, chirps, sample_rate)
-# Same for the other chirp used for velocity calculations
-PSD_RX1_vel, freq_RX1_vel, FFT_RX1_combined_vel = PSD_calc(FFT_RX1_combined_vel, t, duration, chirps_for_velocity, sample_rate)
-PSD_RX2_vel, freq_RX2_vel, FFT_RX2_combined_vel = PSD_calc(FFT_RX2_combined_vel, t, duration, chirps_for_velocity, sample_rate)
-
 
 # Calculate angle of the complex numbers.
 FFT_RX1_phase = phase_calc(FFT_RX1_combined) 
 FFT_RX2_phase = phase_calc(FFT_RX2_combined)
-# Same for the other chirp used for velocity calculations
+
+# Same for the other chirp, this one used for velocity calculations
+f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
+f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
+f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
+f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
+
+FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
+FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
+
+PSD_RX1_vel, freq_RX1_vel, FFT_RX1_combined_vel = PSD_calc(FFT_RX1_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+PSD_RX2_vel, freq_RX2_vel, FFT_RX2_combined_vel = PSD_calc(FFT_RX2_combined_vel, t, duration, chirps_for_velocity, sample_rate)
+
 FFT_RX1_phase_vel = phase_calc(FFT_RX1_combined_vel) 
 FFT_RX2_phase_vel = phase_calc(FFT_RX2_combined_vel)
 
-
+# Range, geometrical angle and velocity calculations
 range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, phi_velocity=FFT_RX1_phase_vel)
 
 # Focus on only the closest object
-range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
+range1, angle1, velocity1 = find_nearest_peak(FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
 
 # ----------------- Optitrack and Obstacle processing ---------------------------
 
 # input column coordinates (Obstacle), in RHS coordinates
 x_column_tot = obstacle_data["Obstacle x"]  # Need the full column for later
-x_column = x_column_tot.drop_duplicates() #Remove repeated values
+x_column = x_column_tot.drop_duplicates() # Remove repeated values
 y_column = obstacle_data["Obstacle y"]
 y_column = y_column.drop_duplicates() 
 z_column = obstacle_data["Obstacle z"]
@@ -199,7 +201,7 @@ for timestamp in range(1, len(radar_msg)-2):
     range_temp1, range_temp2, geo_angle_lst1, velocity_lst1 = range_angle_velocity_calc(freq_RX1, freq_RX2, FFT_RX1_phase, FFT_RX2_phase, chirp_time, phi_velocity=FFT_RX1_phase_vel)
     
     # Focus on only the closest object
-    range1, angle1, velocity1 = find_nearest_peak(12, FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
+    range1, angle1, velocity1 = find_nearest_peak(FFT_RX1_combined, range_temp1, geo_angle_lst1, velocity_lst1)
     
     # Renew optitrack data
     x_drone = opti_x[int((timestamp * len(opti_x)/(len(radar_msg) - 2))-1)]
@@ -254,12 +256,20 @@ velocity_radar = velocity_radar[indices]
 t1 = t1[indices]
 
 # Create figures
-fig = plt.figure()
+#fig = plt.figure()
 fig2 = plt.figure()
 
+fig3 = plt.figure()
+fig4 = plt.figure()
+fig5 = plt.figure()
+
+fig6 = plt.figure()
+fig7 = plt.figure()
+fig8 = plt.figure()
 
 # Optitrack vs radar plots
-ax1 = fig.add_subplot(1,3,1)
+# Plot 1, figure 1
+ax1 = fig3.add_subplot(1,1,1)
 ax1.set_title('Bag ' + str(bagnumber))
 ax1.scatter(t1, range_radar, label='Radar')
 ax1.scatter(t1, range_opti, label='Optitrack')
@@ -267,7 +277,8 @@ ax1.set_xlabel('time [s]')
 ax1.set_ylabel('range [m]')
 ax1.legend()
 
-ax2 = fig.add_subplot(1,3,2)
+# Plot 2, figure 1
+ax2 = fig4.add_subplot(1,1,1)
 ax2.set_title('Bag ' + str(bagnumber))
 ax2.scatter(t1, np.array(angle_radar)*180/np.pi, label='Radar')
 ax2.scatter(t1, angle_opti, label='Optitrack')
@@ -277,7 +288,8 @@ ax2.set_xlabel('time [s]')
 ax2.set_ylabel('angle [deg]')
 ax2.legend()
 
-ax3 = fig.add_subplot(1,3,3)
+# Plot 3, figure 1
+ax3 = fig5.add_subplot(1,1,1)
 ax3.set_title('Bag ' + str(bagnumber))
 ax3.scatter(t1, velocity_radar, label='Radar')
 ax3.scatter(t1, velocity_opti, label='Optitrack')
@@ -295,24 +307,37 @@ error_angle = np.abs(angle_opti - angle_radar*180/np.pi)
 error_velocity = np.abs(velocity_opti - velocity_radar)
 angle_opti = np.abs(angle_opti)
 
+'''# Remove outliers
+_, idx_outliers_range = reject_outliers(error_distance_percent)
+range_opti = np.delete(range_opti, idx_outliers_range)
+error_distance_percent = np.delete(error_distance_percent, idx_outliers_range)
 
-ax4 = fig2.add_subplot(1,3,1)
+_, idx_outliers_angle = reject_outliers(error_angle_percent)
+angle_opti = np.delete(angle_opti, idx_outliers_angle)
+error_angle = np.delete(error_angle, idx_outliers_angle)
 
+_, idx_outliers_velocity = reject_outliers(error_velocity_percent)
+velocity_opti = np.delete(velocity_opti, idx_outliers_velocity)
+error_velocity = np.delete(error_velocity, idx_outliers_velocity)'''
+
+# Plot 1, figure 2 
+ax4 = fig6.add_subplot(1,1,1)
 ax4.set_title('Error of bag ' + str(bagnumber))
 ax4.set_xlabel('Range [m]')
 ax4.set_ylabel('Distance error [%]')
 ax4.plot(range_opti, error_distance_percent,'o')
 
-ax5 = fig2.add_subplot(1,3,2)
+# Plot 2, figure 2
+ax5 = fig7.add_subplot(1,1,1)
 ax5.set_title('Error of bag ' + str(bagnumber))
 ax5.set_xlabel('Angle [deg]')
 ax5.set_ylabel('Angle error [deg]')
 ax5.plot(angle_opti, error_angle,'o')
 
-ax6 = fig2.add_subplot(1,3,3)
+# Plot 3, figure 2
+ax6 = fig8.add_subplot(1,1,1)
 ax6.set_title('Error of bag ' + str(bagnumber))
 ax6.set_xlabel('Velocity [m/s]')
 ax6.set_ylabel('Velocity error [m/s]')
 ax6.plot(velocity_opti, error_velocity,'o')
-
 plt.show()
