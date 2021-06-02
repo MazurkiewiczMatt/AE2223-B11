@@ -6,6 +6,7 @@ This repository is dedicated to an analysis of flight data collected via a MAV w
 There are three main scripts, which are "range_vs_angle.py", "range_vs_time.py", and "tools.py".
 * "range_vs_angle.py" creates a plot of the range between the radar and an obstacle against the angle measured to the obstacle. This script contains a slider as a feature
 * "range_vs_time.py" creates a plot of the range between the radar and an obstacle against time. This script does not contain a slider as a feature
+* "error_vs_bags.py" creates a plot of the range, angle and velocity error for all bag files
 * "tools.py" contains the functions that are used within the two aforementioned scripts
 * "Scrap.py" contains the previous version of the code, which is currently used as reference while working on the three main scripts
 
