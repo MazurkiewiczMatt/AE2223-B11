@@ -28,7 +28,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 15   # minimum 1, maximum 100
+bagnumber = 56   # minimum 1, maximum 100
 directory = get_folder_file('Bags', str(bagnumber) + '.bag')
 with rosbag.Bag(directory) as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
