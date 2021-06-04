@@ -22,7 +22,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 41   # minimum 1, maximum 100
+bagnumber = 70   # minimum 1, maximum 100
 directory = get_folder_file('Bags', str(bagnumber) + '.bag')
 with rosbag.Bag(directory) as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
@@ -237,6 +237,11 @@ for timestamp in range(1, len(radar_msg)-2):
     velocity_optitrack_time.append(velocity_temp)
 
 # - - - - - - - - - - - PLOT - - - - - - - - - - - - - - - - - -
+font = {'family' : 'DejaVu Sans',
+        'size'   : 15}
+
+plt.rc('font', **font)
+
 t1 = np.linspace(0, total_time, len(range_time))
 range_radar = np.array(range_time) 
 range_opti = np.array(optitrack_range_time)

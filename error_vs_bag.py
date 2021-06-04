@@ -321,6 +321,11 @@ print("Distance error: " + "{:.4f}".format(np.percentile(error_distance_plot_val
 print("Angle error: " + "{:.4f}".format(np.percentile(error_angle_plot_values, 25)) + "-" + "{:.4f}".format(np.percentile(error_angle_plot_values, 75)) + " deg")
 print("Velocity error: " + "{:.4f}".format(np.percentile(error_velocity_plot_values, 25)) + "-" + "{:.4f}".format(np.percentile(error_velocity_plot_values, 75)) + " m/s")
 
+# ------------------ PLOT DATA -----------------
+font = {'family' : 'DejaVu Sans',
+        'size'   : 15}
+
+plt.rc('font', **font)
 # Normal plots
 fig = plt.figure()
 
@@ -330,7 +335,7 @@ fig8 = plt.figure()
 
 # Plot 1
 ax1 = fig6.add_subplot(1,1,1)
-ax1.set_title('Distance error all bags')
+ax1.set_title('Range error all bags')
 ax1.scatter(x_bags,error_distance_plot_values)
 ax1.axhline(np.mean(error_distance_plot_values), color='r')
 ax1.set_xlabel('Bag number')
@@ -362,7 +367,7 @@ fig5 = plt.figure()
 
 # Plot 1
 ax4 = fig3.add_subplot(1,1,1)
-ax4.set_title('Distance error all bags')
+ax4.set_title('Range error all bags')
 ax4.set_ylabel('Range error [%]')
 ax4.boxplot(error_distance_plot_values)
 

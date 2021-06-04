@@ -28,7 +28,7 @@ ori_y = [] #y-axis orientation
 ori_z = [] #z-axis orientation
 ori_w = [] #collective axis rotation
 
-bagnumber = 56   # minimum 1, maximum 100
+bagnumber = 41   # minimum 1, maximum 100
 directory = get_folder_file('Bags', str(bagnumber) + '.bag')
 with rosbag.Bag(directory) as bag: #Open the specific file to analyse 
     for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
@@ -139,30 +139,36 @@ distance_to_obstacle = real_distance(x_drone,y_drone, obstacle_x, obstacle_z)
 angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
 
 # --------------- PLOT DATA ---------------------
+font = {'family' : 'DejaVu Sans',
+        'size'   : 15}
+
+plt.rc('font', **font)
 
 fig = plt.figure() #intialise figure
 fig2 = plt.figure() # second frame
+fig3 = plt.figure() # Isolate FFT magnitude plot to save it more easily
+fig4 = plt.figure() # Isolate the radial plot to save it more easily
 
 #Plot 1
-ax1 = fig.add_subplot(1,2,1) 
+ax1 = fig.add_subplot(1,1,1) 
 ax1.set_ylabel('Magnitude')
 ax1.set_xlabel('Normalised frequency')
 ax1.set_title('Radar - FFT magnitude of chirp 1')
 
 #Plot 2
-ax2 = fig.add_subplot(1,2,2) 
+ax2 = fig3.add_subplot(1,1,1) 
 ax2.set_ylabel('Phase [rad]')
 ax2.set_xlabel('Normalised frequency')
 ax2.set_title('Radar - FFT phase of chirp 1')
 
 #Plot 3
-ax3 = fig2.add_subplot(1,2,2, projection='polar')
+ax3 = fig4.add_subplot(1,1,1, projection='polar')
 ax3.set_ylabel('Range [m]')
 ax3.set_xlabel('Angle [deg]') #maybe?
 ax3.set_title('Radar - Range vs Geometric angle (polar)')
 
 #Plot 4
-ax4 = fig2.add_subplot(1,2,1)
+ax4 = fig2.add_subplot(1,1,1)
 ax4.set_ylabel('Y [m]')
 ax4.set_xlabel('X [m]')
 ax4.set_title('Optitrack - Top View (Cartesian)')
@@ -186,8 +192,9 @@ ax4.set_xlim(-5, 5) #Area enclosed
 p2, = ax3.plot(angle1, range1, 'o')
 p9, = ax3.plot(angle_to_obstacle, distance_to_obstacle, 'o', color='r')
 
-p3, = ax1.plot(freq_RX1, PSD_RX1)
-p4, = ax1.plot(freq_RX2, PSD_RX2)
+p3, = ax1.plot(freq_RX1, PSD_RX1, label='RX1')
+p4, = ax1.plot(freq_RX2, PSD_RX2, label='RX2')
+ax1.legend()
 
 p5, = ax2.plot(freq_RX1, FFT_RX1_phase)
 p6, = ax2.plot(freq_RX2, FFT_RX2_phase)
@@ -204,7 +211,7 @@ dist_text = ax4.text(0.04, 0.9, '', transform=ax4.transAxes)
 dist_text.set_text(txt_d)
 
 txt_r = "Distance = " + "{:.3f}".format(range1) + " Angle = " + "{:.3f}".format(np.degrees(angle1*-1))
-radar_txt = ax3.text(0.04, 0.9, '', transform=ax3.transAxes)
+radar_txt = ax3.text(0.04, 0.95, '', transform=ax3.transAxes)
 radar_txt.set_text(txt_r)
 
 # Plot line in wich direction the drone is pointing
@@ -304,6 +311,9 @@ def update(val):
 
     
     fig.canvas.draw()
+    fig2.canvas.draw()
+    fig3.canvas.draw()
+    fig4.canvas.draw()
 
 # Calling the slider function
 s_factor.on_changed(update)
