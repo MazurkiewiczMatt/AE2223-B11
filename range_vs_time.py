@@ -3,9 +3,9 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, \
-    real_angle, find_nearest_peak, get_file, get_folder_file, reject_outliers
+    real_angle, find_nearest_peak, get_folder_file
 import pandas as pd
-from scipy.stats import norm
+
 # ---------------------------- IMPORT BAG -------------------------------
 # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'; can be accessed in folder 1 as cvs files
 #List initialisation
@@ -311,19 +311,6 @@ error_distance = np.abs(range_radar - range_opti)
 error_angle = np.abs(angle_opti - angle_radar*180/np.pi)
 error_velocity = np.abs(velocity_opti - velocity_radar)
 angle_opti = np.abs(angle_opti)
-
-'''# Remove outliers
-_, idx_outliers_range = reject_outliers(error_distance_percent)
-range_opti = np.delete(range_opti, idx_outliers_range)
-error_distance_percent = np.delete(error_distance_percent, idx_outliers_range)
-
-_, idx_outliers_angle = reject_outliers(error_angle_percent)
-angle_opti = np.delete(angle_opti, idx_outliers_angle)
-error_angle = np.delete(error_angle, idx_outliers_angle)
-
-_, idx_outliers_velocity = reject_outliers(error_velocity_percent)
-velocity_opti = np.delete(velocity_opti, idx_outliers_velocity)
-error_velocity = np.delete(error_velocity, idx_outliers_velocity)'''
 
 # Plot 1, figure 2 
 ax4 = fig6.add_subplot(1,1,1)

@@ -1,12 +1,9 @@
 import rosbag
 import numpy as np
 import math
-from scipy.stats import kde
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
-from matplotlib import cm
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, get_file, get_folder_file
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, get_folder_file
 import pandas as pd
 
 # ---------------------------- IMPORT BAG -------------------------------

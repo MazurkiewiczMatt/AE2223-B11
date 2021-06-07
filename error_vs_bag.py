@@ -2,9 +2,8 @@ import rosbag
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, reject_outliers, get_file, get_folder_file
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, get_folder_file
 import pandas as pd
-from scipy.stats import norm
 
 error_list_distance = []
 error_list_angle = []

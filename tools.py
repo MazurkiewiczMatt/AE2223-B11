@@ -1,7 +1,6 @@
-from scipy.signal import find_peaks
-from scipy.fftpack import fftshift, fftfreq, fft
+from scipy.fftpack import fftshift, fftfreq
 import numpy as np
-from math import pi, asin, sin
+from math import pi, sin
 import math
 import os
 
@@ -15,15 +14,6 @@ def get_folder_file(folder, file):
     # Returns the full path, if the file is not in the same folder as the main .py program.
     # If this does not work, use: return get_file(os.path.join(folder, file))
     return os.path.join(folder, file)
-
-
-def reject_outliers(data, m = 2.): # Outlier detection and removal
-        d = np.abs(data - np.median(data))
-        mdev = np.median(d)
-        s = d/mdev if mdev else 0.
-        data_range = np.arange(len(data))
-        idx_list = data_range[s>=m]
-        return data[s<m], idx_list
 
 
 def find_nearest_peak(fft, oldrange, oldangle, oldvelocity):
@@ -101,8 +91,6 @@ def combined_FFT(f_hat_re, f_hat_im):
     
 
 def fourier(chirps, t, realim, duration):  # Calculate the fourier of the signal 
-    dt = duration / len(chirps[realim])  # Realim rx1 0,1 rx2 = 2,3  (0, 2 real; 1, 3 imaginary) - Not clear what is meant here
-    n = len(t)  # Total number of timestamps
     f_hat = fftshift(np.fft.fft(chirps[realim]))  # Frequency array already zero padded according to documentation  - Unnesecary comment
     # add this within the fft:   , n=2*len(chirps[0])  - Unnesecary comment
     return f_hat
