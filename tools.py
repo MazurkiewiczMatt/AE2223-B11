@@ -5,6 +5,18 @@ import math
 import os
 
 
+def empty_axis(fig_no):
+    # Add empty plot to use for common x- and y-label
+    ax = fig_no.add_subplot(1, 1, 1)
+    ax.spines['top'].set_color('none')
+    ax.spines['bottom'].set_color('none')
+    ax.spines['left'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.tick_params(labelcolor='w', top=False, bottom=False, left=False, right=False)
+    return ax
+
+
+
 def get_file(file):
     # Returns the full path, if the file is in the same folder as the main .py program.
     return os.path.join(os.path.dirname(file), file)
