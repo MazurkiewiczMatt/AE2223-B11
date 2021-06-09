@@ -9,14 +9,14 @@ There are three main scripts, which are "range_vs_angle.py", "range_vs_time.py",
 * "error_vs_bags.py" creates a plot of the range, angle and velocity error for all bag files
 * "tools.py" contains the functions that are used within the two aforementioned scripts
 * "Scrap.py" contains the previous version of the code, which is currently used as reference while working on the three main scripts
-* "pose_optitrack.py" creates a plot of a single flight trajectory with the 3 obstacles 
+* "pose_optitrack.py" creates a plot of a single flight trajectory with the 3 obstacle positions
 
 In terms of files, any files with the ".bag" extension are the input data files from the MAV's flights that are used by the scripts for analysis. To see an example of such data, please see CVS files inside of the folder titled "1".
 
 ## Troubleshooting 
 At the moment, all scripts run successfully. 
-In order to replicate the figures from the team's paper, however, certain manipulations are needed from the coder. 
-It is also important to note that to achieve certain images the originals, obtained via Matplotlib, were post-processed using visual editing softwares like InkScape.  
+In order to replicate the figures from the team's paper, however, certain manipulations are needed from the coder. ROS bag 41 was used for making figures found in the Methodolgy section. "Sample 1", "Sample 2", and "Sample 3" from the Results section are ROS bags 10, 40 and 70, respectively. 
+It is also important to note that to achieve certain images the originals, obtained via Matplotlib, were post-processed using visual editing softwares, like InkScape.  
 
 ## Contact
 The project is run and kept by the B11 student group. For questions, please do not hesitate to contact us via WhatsApp, MS Teams and Discord. 
