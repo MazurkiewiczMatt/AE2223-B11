@@ -15,8 +15,14 @@ fig6 = plt.figure()
 fig7 = plt.figure()
 fig8 = plt.figure()
 
-idx_for_figs = 1
+# If you only want one bag shown, still use the list format: bags = [bagnumber]
 bags = [10, 40, 70]
+idx_for_figs = 1   # Use this index to see where the figure should be plotted.
+len_longest_time = 10   # Take length of the bag which takes the longest, to scale the x-axis to.
+
+# If you don't want the bagnumber to appear in the figures, make this True
+anonymous = True
+
 for bagnumber in bags:
     # ---------------------------- IMPORT BAG -------------------------------
     # All topics are: '/dvs/events', '/dvs/imu', '/optitrack/pose', '/radar/data'; can be accessed in folder 1 as cvs files
@@ -274,33 +280,56 @@ for bagnumber in bags:
 
     # Optitrack vs radar plots
     # Plot 1, figure 1
-    ax1ref = empty_axis(fig3)
+    if len(bags) != 1:   # an empty axis system should not be created if there is only one plot, since this plot will then not be visible.
+        ax1ref = empty_axis(fig3)
     ax1 = fig3.add_subplot(len(bags), 1, idx_for_figs)
-    ax1.set_title('Bag ' + str(bagnumber))
+    if anonymous:
+        ax1.set_title('Sample ' + str(idx_for_figs))
+    else:
+        ax1.set_title('Bag ' + str(bagnumber))
     ax1.scatter(t1, range_radar, label='Radar')
     ax1.scatter(t1, range_opti, label='Optitrack')
-    ax1.set_xlim(0, 10)
+    ax1.set_xlim(0, len_longest_time)
     ax1.legend()
+    if len(bags) == 1:
+        ax1.set_xlabel('time [s]')
+        ax1.set_ylabel('range [m]')
 
     # Plot 2, figure 1
-    ax2ref = empty_axis(fig4)
+    if len(bags) != 1:
+        ax2ref = empty_axis(fig4)
     ax2 = fig4.add_subplot(len(bags), 1, idx_for_figs)
-    ax2.set_title('Bag ' + str(bagnumber))
+    if anonymous:
+        ax2.set_title('Sample ' + str(idx_for_figs))
+    else:
+        ax2.set_title('Bag ' + str(bagnumber))
     ax2.scatter(t1, np.array(angle_radar)*180/np.pi, label='Radar')
     ax2.scatter(t1, angle_opti, label='Optitrack')
     ax2.axhline(38,0, t1[-1], color='k')
     ax2.axhline(-38,0, t1[-1], color='k')
-    ax2.set_xlim(0, 10)
+    ax2.set_xlim(0, len_longest_time)
     ax2.legend()
+    if len(bags) == 1:
+        ax2.set_xlabel('time [s]')
+        ax2.set_ylabel('angle [deg]')
+
 
     # Plot 3, figure 1
-    ax3ref = empty_axis(fig5)
+    if len(bags) != 1:
+        ax3ref = empty_axis(fig5)
     ax3 = fig5.add_subplot(len(bags), 1, idx_for_figs)
-    ax3.set_title('Bag ' + str(bagnumber))
+    if anonymous:
+        ax3.set_title('Sample ' + str(idx_for_figs))
+    else:
+        ax3.set_title('Bag ' + str(bagnumber))
     ax3.scatter(t1, velocity_radar, label='Radar')
     ax3.scatter(t1, velocity_opti, label='Optitrack')
-    ax3.set_xlim(0, 10)
+    ax3.set_xlim(0, len_longest_time)
     ax3.legend()
+    if len(bags) == 1:
+        ax3.set_xlabel('time [s]')
+        ax3.set_ylabel('velocity [m/s]')
+
 
     # Error calculations and plots
     error_distance_percent = np.abs(range_radar - range_opti) * 100 / np.abs(range_opti)
@@ -314,7 +343,10 @@ for bagnumber in bags:
 
     # Plot 1, figure 2 
     ax4 = fig6.add_subplot(1,1,1)
-    ax4.set_title('Error of bag ' + str(bagnumber))
+    if len(bags) == 1:  # For correct grammar when using one bag.
+        ax4.set_title('Range error of 1 sample bag')
+    else:
+        ax4.set_title('Range error of ' + str(len(bags)) + ' sample bags')
     ax4.set_xlabel('Range [m]')
     ax4.set_ylabel('Distance error [%]')
     ax4.plot(range_opti, error_distance_percent,'o', label='Bag '+str(bagnumber))
@@ -322,7 +354,10 @@ for bagnumber in bags:
 
     # Plot 2, figure 2
     ax5 = fig7.add_subplot(1,1,1)
-    ax5.set_title('Error of bag ' + str(bagnumber))
+    if len(bags) == 1:
+        ax5.set_title('Angle error of 1 sample bag')
+    else:
+        ax5.set_title('Angle error of ' + str(len(bags)) + ' sample bags')
     ax5.set_xlabel('Angle [deg]')
     ax5.set_ylabel('Angle error [deg]')
     ax5.plot(angle_opti, error_angle,'o', label='Bag '+str(bagnumber))
@@ -330,7 +365,10 @@ for bagnumber in bags:
 
     # Plot 3, figure 2
     ax6 = fig8.add_subplot(1,1,1)
-    ax6.set_title('Error of bag ' + str(bagnumber))
+    if len(bags) == 1:
+        ax6.set_title('Velocity error of 1 sample bag')
+    else:
+        ax6.set_title('Velocity error of ' + str(len(bags)) + ' sample bags')
     ax6.set_xlabel('Velocity [m/s]')
     ax6.set_ylabel('Velocity error [m/s]')
     ax6.plot(velocity_opti, error_velocity,'o', label='Bag '+str(bagnumber))
@@ -339,11 +377,12 @@ for bagnumber in bags:
     idx_for_figs += 1
 
 # Set the final labels (only do this once)
-ax1ref.set_xlabel('time [s]')
-ax1ref.set_ylabel('range [m]')
-ax2ref.set_xlabel('time [s]')
-ax2ref.set_ylabel('angle [deg]')
-ax3ref.set_xlabel('time [s]')
-ax3ref.set_ylabel('velocity [m/s]')
+if len(bags) != 1:
+    ax1ref.set_xlabel('time [s]')
+    ax1ref.set_ylabel('range [m]')
+    ax2ref.set_xlabel('time [s]')
+    ax2ref.set_ylabel('angle [deg]')
+    ax3ref.set_xlabel('time [s]')
+    ax3ref.set_ylabel('velocity [m/s]')
 
 plt.show()
