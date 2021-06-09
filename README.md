@@ -3,7 +3,7 @@
 This repository is dedicated to an analysis of flight data collected via a MAV with the goal of concluding whether the radar used on board of the MAV is a viable solution as part of the Sense and Avoid system on MAVs responsible for obstacle detection. For most up-to-date information on the project and this repository, please see the group's [Overleaf file](https://www.overleaf.com/read/mjbcnttmngxn).
 
 ## Scripts and Files
-There are three main scripts, which are "range_vs_angle.py", "range_vs_time.py", and "tools.py".
+There are four main scripts, which are "range_vs_angle.py", "range_vs_time.py", "error_vs_bag.py" and "tools.py".
 * "range_vs_angle.py" creates a plot of the range between the radar and an obstacle against the angle measured to the obstacle. This script contains a slider as a feature
 * "range_vs_time.py" creates a plot of the range between the radar and an obstacle against time. This script does not contain a slider as a feature
 * "error_vs_bags.py" creates a plot of the range, angle and velocity error for all bag files
