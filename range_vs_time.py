@@ -279,6 +279,7 @@ for bagnumber in bags:
     ax1.set_title('Bag ' + str(bagnumber))
     ax1.scatter(t1, range_radar, label='Radar')
     ax1.scatter(t1, range_opti, label='Optitrack')
+    ax1.set_xlim(0, 10)
     ax1.legend()
 
     # Plot 2, figure 1
@@ -289,6 +290,7 @@ for bagnumber in bags:
     ax2.scatter(t1, angle_opti, label='Optitrack')
     ax2.axhline(38,0, t1[-1], color='k')
     ax2.axhline(-38,0, t1[-1], color='k')
+    ax2.set_xlim(0, 10)
     ax2.legend()
 
     # Plot 3, figure 1
@@ -297,6 +299,7 @@ for bagnumber in bags:
     ax3.set_title('Bag ' + str(bagnumber))
     ax3.scatter(t1, velocity_radar, label='Radar')
     ax3.scatter(t1, velocity_opti, label='Optitrack')
+    ax3.set_xlim(0, 10)
     ax3.legend()
 
     # Error calculations and plots

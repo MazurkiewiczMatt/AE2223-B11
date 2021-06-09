@@ -141,6 +141,9 @@ font = {'family' : 'DejaVu Sans',
 
 plt.rc('font', **font)
 
+# Use this variable if you want to plot the arrow as in the research paper.
+arrow_on = False
+
 fig = plt.figure() #intialise figure
 fig2 = plt.figure() # second frame
 fig3 = plt.figure() # Isolate FFT magnitude plot to save it more easily
@@ -148,9 +151,26 @@ fig4 = plt.figure() # Isolate the radial plot to save it more easily
 
 #Plot 1
 ax1 = fig.add_subplot(1,1,1) 
-ax1.set_ylabel('Magnitude')
+ax1.set_ylabel('Magnitude [-]')
 ax1.set_xlabel('Normalised frequency')
 ax1.set_title('Radar - FFT magnitude of chirp 1')
+if arrow_on:
+    ax1.annotate(
+    # Label and coordinate
+    'Wall', xy=(0.09, 1800),xytext=(0.2, 1650) ,
+    horizontalalignment="center",
+    # Custom arrow
+    arrowprops=dict(arrowstyle='->',lw=1)
+    )
+
+    ax1.annotate(
+    # Label and coordinate
+    'Obstacle', xy=(0.035, 1900),xytext=(0.15, 2200) ,
+    horizontalalignment="center",
+    # Custom arrow
+    arrowprops=dict(arrowstyle='->',lw=1)
+    )
+
 
 #Plot 2
 ax2 = fig3.add_subplot(1,1,1) 
