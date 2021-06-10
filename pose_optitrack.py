@@ -5,15 +5,6 @@ from matplotlib import pyplot as plt
 import rosbag
 
 
-def data_for_cylinder_along_z(center_x, center_y, radius_c, height_z):
-    z = np.linspace(0, height_z, 50)
-    theta = np.linspace(0, 2*np.pi, 50)
-    theta_grid, z_grid = np.meshgrid(theta, z)
-    x_grid = radius_c*np.cos(theta_grid) + center_x
-    y_grid = radius_c*np.sin(theta_grid) + center_y
-    return x_grid, y_grid, z_grid
-
-
 def bagselect(bagnum):
     # input trajectory coordinates, in RHS
     x_coordinates = []
@@ -42,14 +33,13 @@ Xc1, Zc1, Yc1 = column_variants[0]  # first column
 Xc2, Zc2, Yc2 = column_variants[1]  # second column
 Xc3, Zc3, Yc3 = column_variants[2]  # third column
 
-# making 2D plot:
+# making a 2D plot:
 figure, axes = plt.subplots()
 radius = 0.4
 c = plt.Circle((Xc1, Yc1), radius, color="orange", alpha=0.5)
 cc = plt.Circle((Xc2, Yc2), radius, color="r", alpha=0.5)
 ccc = plt.Circle((Xc3, Yc3), radius, color="b", alpha=0.5)
 
-folder = os.listdir("Bags")
 x, y, z = bagselect("41.bag")
 
 plt.plot(x, z, color= "g")
