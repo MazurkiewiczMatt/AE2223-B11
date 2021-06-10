@@ -77,12 +77,12 @@ duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1
 chirp_time = duration / no_chirps #Time for 1 chirp (16 chirps total)
 t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
 msg_rate = 1 / (chirp_time * no_chirps) #The frequency at which messages are taken
-sample_rate = msg_rate * len(chirps[0]) #Samlig frequency for chirp data (128 = len(chirps[0]))
+sample_rate = msg_rate * len(chirps[0]) #Sampling frequency for chirp data (128 = len(chirps[0]))
 
-f_hat_1re = fourier(chirps, t, 0, duration)  # rx_1re
-f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
-f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
-f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
+f_hat_1re = fourier(chirps, t, 0, duration)
+f_hat_1im = fourier(chirps, t, 1, duration)
+f_hat_2re = fourier(chirps, t, 2, duration)
+f_hat_2im = fourier(chirps, t, 3, duration)
 
 # FFT of the combined (complex) signal = combination of the outputs of the FFT. Calculation is as follows:
 #Check tools.py for more details on functions 
@@ -105,7 +105,7 @@ range1, angle1, velocity1 = find_nearest_peak(FFT_RX1_combined, range_temp1, geo
 # ----------------- Optitrack and Obstacle processing ---------------------------
 
 # input column coordinates (Obstacle), in RHS coordinates
-x_column_tot = obstacle_data["Obstacle x"]  # Need the full column for later
+x_column_tot = obstacle_data["Obstacle x"]
 x_column = x_column_tot.drop_duplicates() #Remove repeated values
 y_column = obstacle_data["Obstacle y"]
 y_column = y_column.drop_duplicates() 
@@ -118,7 +118,7 @@ obstacles = np.stack((x_column, y_column, z_column), axis=1) # xyz: for coordina
 # Array of obstacle positions per bag file.
 x_value = x_column_tot[bagnumber-1]
 for i in range(3): #3 cooridnates present
-    if x_value == obstacles[i][0]: #If numbers match then flip the x cooridnates to adjust graph
+    if x_value == obstacles[i][0]: #If numbers match then flip the x coordinates to adjust graph
         obstacle_x, obstacle_y, obstacle_z = obstacles[i]
         obstacle_x *= -1
 
@@ -181,7 +181,7 @@ ax2.set_title('Radar - FFT phase of chirp 1')
 #Plot 3
 ax3 = fig4.add_subplot(1,1,1, projection='polar')
 ax3.set_ylabel('Range [m]')
-ax3.set_xlabel('Angle [deg]') #maybe?
+ax3.set_xlabel('Angle [deg]')
 ax3.set_title('Radar - Range vs Geometric angle (polar)')
 
 #Plot 4
@@ -199,7 +199,7 @@ ax3.set_thetamax(45) #FOV limit
 ax3.set_rlim(0, 10) #Max detectable range should be 10 meters or less
 
 #Plot 1 adjustments
-ax1.set_ylim(0, 2500) #PSD values get very large in magnitude
+ax1.set_ylim(0, 2500)
 
 #Plot 4 adjustments
 ax4.set_ylim(-5, 5) #Area is 10 by 10 and centered around the middle
@@ -241,7 +241,7 @@ line.set_data(thisx, thisy)
 # Slider
 ax_slide = plt.axes([0.25, 0.02, 0.65, 0.03])
 s_factor = Slider(ax_slide, 'Time', valmin=0, valmax=(len(radar_msg) - 2), valinit=0, valstep=1)
-# Val max is messages in terms of index, so start from 0
+# Val max is messages in terms of index, and since an upwind scheme is sometimes used, don't continue until the last message.
 
 def update(val):
     current_v = s_factor.val  # Get current value on the slider
@@ -252,10 +252,10 @@ def update(val):
     chirp_time = duration / no_chirps
     t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
 
-    f_hat_1re = fourier(chirps, t, 0, duration)  # rx_1re
-    f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
-    f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
-    f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
+    f_hat_1re = fourier(chirps, t, 0, duration)
+    f_hat_1im = fourier(chirps, t, 1, duration)
+    f_hat_2re = fourier(chirps, t, 2, duration)
+    f_hat_2im = fourier(chirps, t, 3, duration)
     
     FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im)
     FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)

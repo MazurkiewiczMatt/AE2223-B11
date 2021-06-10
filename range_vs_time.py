@@ -40,7 +40,6 @@ for bagnumber in bags:
     ori_z = [] #z-axis orientation
     ori_w = [] #collective axis rotation
 
-    #bagnumber = 70   # minimum 1, maximum 100
     directory = get_folder_file('Bags', str(bagnumber) + '.bag')
     with rosbag.Bag(directory) as bag: #Open the specific file to analyse 
         for topic, msg, t in bag.read_messages(topics=['/radar/data']): #Organise data for radar from Topics
@@ -88,7 +87,7 @@ for bagnumber in bags:
     total_time = (radar_msg[timestamp-1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9
     duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  #Total time of one message in seconds
     chirp_time = duration / no_chirps #Time for 1 chirp (16 chirps total)
-    t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
+    t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis for the signal as a function of time.
     msg_rate = 1 / (chirp_time * no_chirps) #The frequency at which messages are taken
     sample_rate = msg_rate * len(chirps[0]) #Samlig frequency for chirp data (128 = len(chirps[0]))
 
@@ -110,10 +109,10 @@ for bagnumber in bags:
     FFT_RX2_phase = phase_calc(FFT_RX2_combined)
 
     # Same for the other chirp, this one used for velocity calculations
-    f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
-    f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
-    f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
-    f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
+    f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)
+    f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)
+    f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)
+    f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)
 
     FFT_RX1_combined_vel = combined_FFT(f_hat_1re_vel, f_hat_1im_vel) 
     FFT_RX2_combined_vel = combined_FFT(f_hat_2re_vel, f_hat_2im_vel)
@@ -133,7 +132,7 @@ for bagnumber in bags:
     # ----------------- Optitrack and Obstacle processing ---------------------------
 
     # input column coordinates (Obstacle), in RHS coordinates
-    x_column_tot = obstacle_data["Obstacle x"]  # Need the full column for later
+    x_column_tot = obstacle_data["Obstacle x"]
     x_column = x_column_tot.drop_duplicates() # Remove repeated values
     y_column = obstacle_data["Obstacle y"]
     y_column = y_column.drop_duplicates() 
@@ -183,19 +182,19 @@ for bagnumber in bags:
         
         chirps, no_chirps, length_chirp = chirp_func(timestamp, radar_msg, 0)
         chirps_for_velocity, _, _ = chirp_func(timestamp, radar_msg, 1)
-        duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds.
+        duration = (radar_msg[timestamp + 1].ts - radar_msg[timestamp].ts).to_nsec() / 1e9  # seconds
         chirp_time = duration / no_chirps
-        t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis [seconds]
+        t = np.linspace(0, chirp_time, len(chirps[0]))  # x-axis for the signal as a function of time.
 
-        f_hat_1re = fourier(chirps, t, 0, duration)  # rx_1re
-        f_hat_1im = fourier(chirps, t, 1, duration)  # rx_1im
-        f_hat_2re = fourier(chirps, t, 2, duration)  # rx_2re
-        f_hat_2im = fourier(chirps, t, 3, duration)  # rx_2im
+        f_hat_1re = fourier(chirps, t, 0, duration)
+        f_hat_1im = fourier(chirps, t, 1, duration)
+        f_hat_2re = fourier(chirps, t, 2, duration)
+        f_hat_2im = fourier(chirps, t, 3, duration)
         # Same for the other chirp used for velocity calculations
-        f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)  # rx_1re
-        f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)  # rx_1im
-        f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)  # rx_2re
-        f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)  # rx_2im
+        f_hat_1re_vel = fourier(chirps_for_velocity, t, 0, duration)
+        f_hat_1im_vel = fourier(chirps_for_velocity, t, 1, duration)
+        f_hat_2re_vel = fourier(chirps_for_velocity, t, 2, duration)
+        f_hat_2im_vel = fourier(chirps_for_velocity, t, 3, duration)
 
         FFT_RX1_combined = combined_FFT(f_hat_1re, f_hat_1im)
         FFT_RX2_combined = combined_FFT(f_hat_2re, f_hat_2im)
@@ -238,7 +237,7 @@ for bagnumber in bags:
         distance_to_obstacle_next = real_distance(x_drone_next, y_drone_next, obstacle_x, obstacle_z)
         angle_to_obstacle, drone_yaw = real_angle(x_drone, y_drone, obstacle_x, obstacle_z, ox_drone, oy_drone, oz_drone, ow_drone)
         
-        # Make angle work
+        # Make angle work in case it surpasses 180 degrees.
         angle_to_obstacle_deg = np.degrees(angle_to_obstacle)
         if angle_to_obstacle_deg > 180:
             angle_to_obstacle_deg = -360 + angle_to_obstacle_deg
@@ -376,7 +375,7 @@ for bagnumber in bags:
 
     idx_for_figs += 1
 
-# Set the final labels (only do this once)
+# Set the final labels (only do this once, therefore out of the loop)
 if len(bags) != 1:
     ax1ref.set_xlabel('time [s]')
     ax1ref.set_ylabel('range [m]')
