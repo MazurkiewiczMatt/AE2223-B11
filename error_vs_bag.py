@@ -2,9 +2,8 @@ import rosbag
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, reject_outliers, get_file, get_folder_file
+from tools import fourier, chirp_func, phase_calc, range_angle_velocity_calc, combined_FFT, PSD_calc, real_distance, real_angle, find_nearest_peak, get_folder_file
 import pandas as pd
-from scipy.stats import norm
 
 error_list_distance = []
 error_list_angle = []
@@ -323,7 +322,7 @@ print("Velocity error: " + "{:.4f}".format(np.percentile(error_velocity_plot_val
 
 # ------------------ PLOT DATA -----------------
 font = {'family' : 'DejaVu Sans',
-        'size'   : 15}
+        'size'   : 14}
 
 plt.rc('font', **font)
 # Normal plots
@@ -334,24 +333,24 @@ fig7 = plt.figure()
 fig8 = plt.figure()
 
 # Plot 1
-ax1 = fig6.add_subplot(1,1,1)
+ax1 = fig6.add_subplot(3,1,1)
 ax1.set_title('Range error all bags')
 ax1.scatter(x_bags,error_distance_plot_values)
 ax1.axhline(np.mean(error_distance_plot_values), color='r')
-ax1.set_xlabel('Bag number')
+#ax1.set_xlabel('Bag number')
 ax1.set_ylabel('Range error [%]')
 
 # Plot 2 
-ax2 = fig7.add_subplot(1,1,1)
+ax2 = fig6.add_subplot(3,1,2)
 ax2.set_title('Angle error all bags')
 ax2.scatter(x_bags,error_angle_plot_values)
 ax2.axhline(np.mean(error_angle_plot_values), color='r')
-ax2.set_xlabel('Bag number')
+#ax2.set_xlabel('Bag number')
 ax2.set_ylabel('Angle error [deg]')
 
 
 # Plot 3
-ax3 = fig8.add_subplot(1,1,1)
+ax3 = fig6.add_subplot(3,1,3)
 ax3.set_title('Velocity error all bags')
 ax3.scatter(x_bags, error_velocity_plot_values, label='Radar')
 ax3.axhline(np.mean(error_velocity_plot_values), color='r')
