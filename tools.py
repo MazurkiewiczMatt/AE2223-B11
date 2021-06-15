@@ -63,7 +63,7 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time, phi_veloci
     # Scale the frequency to the maximum range
     R_max = 25
     F_max = 2 * B * R_max / (c * T)
-    freq1 = 2 * freq1 * F_max / 0.5   # We discard negative frequencies, thereby cutting the frequency axis in half. This is compensated for by multiplying by 2.
+    freq1 = 2 * freq1 * F_max / 0.5   # We discard negative frequencies, thus ranges, thereby cutting the x axis in half. This is compensated for by multiplying by 2.
     freq2 = 2 * freq2 * F_max / 0.5
 
     d_test_2 = (sin((pi/180) * (76/2)))**-1 * (0.0125 / 2)
@@ -86,7 +86,7 @@ def range_angle_velocity_calc(freq1, freq2, phi_1, phi_2, chirp_time, phi_veloci
 
     if phi_velocity is not None:
         delta_phase_vel = phi_velocity - phi_1
-        velocity_lst = 2*np.pi*(c * abs(delta_phase_vel) / (4 * np.pi * f * T))  # Velocity formula, factor 2pi to compensate for radians.
+        velocity_lst = 2*np.pi*(c * abs(delta_phase_vel) / (4 * np.pi * f * T))  # Velocity formula, factor 2pi to go from radial velocity to m/s.
     else:
         velocity_lst = np.zeros(len(delta_omega))
 

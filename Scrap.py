@@ -16,7 +16,7 @@ with rosbag.Bag('1.bag') as bag:
         radar_time.append(t)
         radar_msg.append(msg)
 
-timestamp = # each timestamp has a message. Can be used to see what happens over time.
+timestamp = 0 # each timestamp has a message. Can be used to see what happens over time.
 
 # ---------------------------------- LOAD DATA --------------------------------
 # This is the data from a single datapoint (time interval)
